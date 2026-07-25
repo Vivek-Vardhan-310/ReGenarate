@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # ------------------------------------------
+  # Backend API Service (FastAPI + Groq SDK)
+  # ------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: regenerate-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - MODEL_NAME=llama-3.3-70b-versatile
+      - TEMPERATURE=0.3
+      - MAX_TOKENS=4096
+      - HOST=0.0.0.0
+      - PORT=8000
+      - REQUEST_TIMEOUT=30
+      - DEBUG=false
+      - APP_ENV=production
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import httpx; r = httpx.get('http://localhost:8000/api/v1/health'); exit(0 if r.status_code == 200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ------------------------------------------
+  # Frontend Web Server Service (NGINX)
+  # ------------------------------------------
+  frontend:
+    image: nginx:alpine
+    container_name: regenerate-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      backend:
+        condition: service_healthy
