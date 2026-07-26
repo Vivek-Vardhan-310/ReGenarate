@@ -2,7 +2,7 @@
 
 **Project Name:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -18,20 +18,28 @@
 2. Product Vision
 3. Mission Statement
 4. Problem Statement
-5. Goals & Objectives
+5. Product Goals
 6. Product Scope
-7. Target Users
-8. User Personas
-9. User Journey
-10. Core Value Proposition
-11. Success Metrics
-12. High-Level Features
-13. Functional Requirements
-14. Non-Functional Requirements
-15. Risks
-16. Future Roadmap
-17. Acceptance Criteria
-18. Glossary
+7. Product Scope Exclusions
+8. Product Philosophy
+9. Core Product Values
+10. Target Users
+11. User Personas
+12. User Journey
+13. User Stories
+14. Feature Matrix
+15. Functional Requirements
+16. Non-Functional Requirements
+17. Business Rules
+18. Assumptions
+19. Constraints
+20. Risk Analysis
+21. Success Metrics (KPIs)
+22. Release Plan
+23. Future Roadmap
+24. Acceptance Criteria
+25. Glossary
+26. Conclusion
 
 ---
 
@@ -166,6 +174,16 @@ The proposed platform addresses these problems by combining modern LLM reasoning
 ✓ Environment configuration
 
 ✓ Error handling
+
+---
+
+## Version 2 Additions
+
+- File import support
+- Automatic language detection
+- Integrated execution console
+- Runtime-aware AI reviews
+- Improved debugging recommendations
 
 ---
 
@@ -563,15 +581,13 @@ The interface should require no onboarding.
 
 ## Step 2 — Submit Code
 
-The user pastes source code into the editor.
+The user pastes source code into the editor or imports source code directly using the Open File picker or Drag & Drop (Version 2 capability).
 
-Future versions will additionally support
-
-• File Upload
-
-• Drag & Drop
+Future versions will additionally support:
 
 • GitHub Import
+
+• Repository Indexing
 
 ---
 

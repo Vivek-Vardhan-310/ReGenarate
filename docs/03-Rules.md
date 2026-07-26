@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Active
 
@@ -21,16 +21,47 @@
 
 # Table of Contents
 
+### Part 1 — Core Development Standards
 1. Purpose
 2. Engineering Philosophy
 3. Core Development Principles
 4. General Coding Rules
 5. Project Structure Rules
 6. Naming Conventions
-7. Code Quality Standards
-8. Documentation Standards
-9. AI Development Guidelines
-10. Rule Enforcement
+7. Python Standards
+8. JavaScript Standards
+9. HTML Standards
+10. Tailwind & CSS Standards
+11. API Development Standards
+12. Configuration Rules
+13. Dependency Management
+14. Error Handling Standards
+15. Logging Standards
+
+### Part 2 — Workflow & Operational Processes
+16. Git Workflow Standards
+17. Commit Message Standards
+18. Pull Request Standards
+19. Code Review Standards
+20. Testing Standards
+21. Documentation Standards
+22. Security Checklist
+23. Performance Checklist
+24. AI-Assisted Development Guidelines
+25. Definition of Done (DoD)
+
+### Part 3 — Quality Governance & Life Cycle Management
+26. Rule Exceptions
+27. Technical Debt Policy
+28. Deprecation Policy
+29. Versioning Standards
+30. Dependency Management Policy
+31. Release Readiness Checklist
+32. Engineering Metrics
+33. Contributor Onboarding
+34. Living Document Policy
+35. Engineering Checklist
+36. Final Summary
 
 ---
 

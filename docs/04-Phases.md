@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -29,6 +29,21 @@
 6. Phase Planning Strategy
 7. Deliverables
 8. Success Criteria
+9. Phase 0 — Planning & Documentation
+10. Phase 1 — Development Environment
+11. Phase 2 — Backend Foundation
+12. Phase 3 — Frontend Foundation
+13. Phase 4 — AI Integration
+14. Phase 5 — Core Features
+15. Phase 6 — Testing & Quality Assurance
+16. Phase 7 — Performance Optimization
+17. Phase 8 — Deployment & Release
+18. Phase 9 — Future Enhancements
+19. Critical Path Analysis
+20. Risk Register
+21. Project Completion Checklist
+22. Version 2 Roadmap (Phases 10–14)
+23. Final Summary
 
 ---
 
@@ -220,6 +235,36 @@ Deployment
 ## Phase 9
 
 Future Expansion
+
+---
+
+## Phase 10
+
+File Import System
+
+---
+
+## Phase 11
+
+Integrated Execution Console
+
+---
+
+## Phase 12
+
+Runtime-Aware AI Reviews
+
+---
+
+## Phase 13
+
+Enhanced AI Debugging
+
+---
+
+## Phase 14
+
+User Experience Improvements
 
 ---
 
@@ -2808,7 +2853,311 @@ Before Version 1.0 is released:
 
 ---
 
-# 22. Final Summary
+# 22. Version 2 Roadmap
+
+The following phases extend the completed Version 1 implementation.
+These phases introduce additional functionality while preserving the existing architecture.
+
+---
+
+# Phase 10 – File Import System
+
+## Objective
+
+Allow users to import source code files directly into the editor instead of manually pasting code.
+
+---
+
+## Features
+
+- Add an "Open File" button beside the code editor.
+- Support drag-and-drop (optional but recommended).
+- Allow selecting files from the local machine.
+- Automatically load the file contents into the editor.
+- Detect the programming language from the file extension.
+- Automatically update the language selector when possible.
+
+---
+
+## Supported File Types
+
+Only allow file types currently supported by the AI reviewer.
+
+Examples include:
+
+- .py
+- .java
+- .js
+- .ts
+- .cpp
+- .c
+- .cs
+- .go
+- .php
+- .rb
+- .rs
+- .swift
+- .kt
+- .scala
+- .sql
+- .html
+- .css
+- .xml
+- .json
+- .yaml
+- .yml
+
+The accepted extensions should be generated from a centralized language configuration rather than duplicated across the application.
+
+---
+
+## Validation
+
+Reject unsupported file types.
+
+Display a clear error message when:
+
+- file type is unsupported
+- file is empty
+- file exceeds configured size limit
+- file cannot be read
+
+---
+
+## Deliverables
+
+- File picker
+- File validation
+- Automatic language detection
+- Editor integration
+- Error handling
+
+---
+
+# Phase 11 – Integrated Execution Console
+
+## Objective
+
+Provide users with a built-in execution console for viewing program output and runtime errors.
+
+---
+
+## Features
+
+Display:
+
+- Standard Output (stdout)
+- Runtime Errors (stderr)
+- Exit status
+- Execution duration
+
+---
+
+## UI
+
+Add a console panel below the code editor.
+
+Suggested layout
+
+Editor
+-------------------
+
+Console
+
+-------------------
+
+AI Review
+
+---
+
+The console should support:
+
+- syntax highlighting where applicable
+- auto scrolling
+- clear console button
+- copy output button
+
+---
+
+## Error Presentation
+
+Errors should remain formatted exactly as produced by the runtime.
+
+Avoid modifying stack traces.
+
+---
+
+## Deliverables
+
+- Console component
+- Output rendering
+- Error rendering
+- Console controls
+
+---
+
+# Phase 12 – Runtime-Aware AI Reviews
+
+## Objective
+
+Improve AI review quality by including execution output together with source code.
+
+---
+
+## Motivation
+
+Static code review alone can produce incorrect assumptions.
+
+Providing runtime output allows the AI to:
+
+- identify actual failures
+- understand stack traces
+- correlate errors with source code
+- reduce hallucinations
+- provide more accurate debugging advice
+
+---
+
+## AI Input
+
+The AI should receive:
+
+Programming Language
+
+↓
+
+Source Code
+
+↓
+
+Console Output
+
+↓
+
+Review Focus
+
+---
+
+If console output is unavailable, the review should fall back to standard static analysis.
+
+---
+
+## Prompt Changes
+
+Update review prompts to include:
+
+Runtime Output
+
+between
+
+Source Code
+
+and
+
+Instructions.
+
+The AI should distinguish between:
+
+- compile errors
+- runtime errors
+- warnings
+- successful execution
+
+---
+
+## Deliverables
+
+- Updated Prompt Builder
+- Updated Prompt Templates
+- API request changes
+- Runtime-aware reviews
+
+---
+
+# Phase 13 – Enhanced AI Debugging
+
+## Objective
+
+Expand the review engine to provide execution-aware debugging assistance.
+
+---
+
+## AI Responsibilities
+
+When runtime output exists:
+
+- Explain the error.
+- Locate probable source.
+- Explain why it occurred.
+- Suggest fixes.
+- Estimate confidence.
+
+When execution succeeds:
+
+Review:
+
+- logic
+- performance
+- readability
+- maintainability
+- best practices
+
+---
+
+## Review Sections
+
+Summary
+
+Detected Runtime Issues
+
+Probable Cause
+
+Suggested Fix
+
+Improved Code
+
+Additional Recommendations
+
+---
+
+## Deliverables
+
+- Enhanced prompt templates
+- Improved response parser
+- Updated frontend renderer
+
+---
+
+# Phase 14 – User Experience Improvements
+
+## Objective
+
+Improve usability of the review workflow.
+
+---
+
+## Features
+
+- Recent files
+- Reload last imported file
+- Drag-and-drop upload
+- Copy console output
+- Download review
+- Download rewritten code
+- Better loading indicators
+- Improved mobile responsiveness
+
+---
+
+## Deliverables
+
+- UI polish
+- Workflow improvements
+- Accessibility improvements
+
+---
+
+# 23. Final Summary
 
 This Development Execution Plan provides a structured roadmap for delivering the AI Code Review & Rewrite Agent from initial planning through production release.
 

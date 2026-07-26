@@ -15,6 +15,14 @@ A production-quality, modular, and scalable AI-powered web application that revi
 - 🗜️ **Response Compression**: FastAPI GZip middleware compressing HTTP responses exceeding 1000 bytes.
 - 🐳 **Docker & Docker Compose**: Production-ready multi-stage Dockerfile and Docker Compose orchestration.
 
+## New in Version 2
+
+- 📂 Import source code files
+- 🔍 Automatic language detection
+- 🖥️ Built-in execution console
+- 🤖 Runtime-aware AI reviews
+- 🐞 Improved debugging assistance
+
 ---
 
 ## 🏗️ System Architecture

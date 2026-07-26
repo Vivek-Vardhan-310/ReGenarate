@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -23,6 +23,7 @@
 
 # Table of Contents
 
+### Part 1 — Public API Specification
 1. Purpose
 2. API Philosophy
 3. REST Design Principles
@@ -33,6 +34,59 @@
 8. Response Standards
 9. HTTP Status Codes
 10. Content Types
+11. GET /health
+12. POST /review (Includes Version 2 Runtime Execution Context)
+13. Detailed POST /review Specification
+14. POST /rewrite
+15. Common Validation Rules
+16. Response Formatting Rules
+17. Endpoint Behavior Summary
+
+### Part 2 — Internal Backend Service Architecture
+18. Internal Service Architecture
+19. API Controller Contract
+20. Validation Layer Contract
+21. Review Service Contract
+22. Rewrite Service Contract
+23. Prompt Builder Contract
+24. AI Provider Contract
+25. Response Parser Contract
+26. Configuration Service
+27. Logging Service
+28. Service Dependency Rules
+29. Internal Processing Sequence
+30. Service Contract Principles
+
+### Part 3 — Error Handling & Operational Policies
+31. Error Handling Philosophy
+32. Standard Error Response
+33. Standard Error Codes
+34. Exception Handling Strategy
+35. Timeout Strategy
+36. Retry Strategy
+37. Input Validation & Sanitization
+38. Rate Limiting
+39. Security Considerations
+40. CORS Policy
+41. Logging & Monitoring
+42. Security Checklist
+43. Error Handling Principles Recap
+
+### Part 4 — Governance & Evolution Strategy
+44. API Governance
+45. API Evolution Strategy
+46. Backward Compatibility
+47. Deprecation Policy
+48. Documentation Standards
+49. API Testing Requirements
+50. OpenAPI Specification
+51. Change Management
+52. API Review Checklist
+53. Future API Roadmap
+54. API Design Principles Recap
+55. Final Summary
+
+---
 
 ---
 
@@ -574,6 +628,7 @@ The endpoint should:
 
 Analyzes submitted source code and returns an AI-generated review.
 
+Version 2 supports optional runtime execution data. When provided, the AI uses both the submitted source code and the execution results to generate a more accurate review.
 ---
 
 ## Endpoint
@@ -588,11 +643,54 @@ POST /api/v1/review
 
 ```json
 {
-  "language": "java",
+  "language": "python",
   "review_focus": "performance",
-  "code": "public class Example { }"
+  "code": "...",
+  "execution": {
+    "status": "failed",
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "Traceback (most recent call last): ...",
+    "execution_time_ms": 42
+  }
 }
 ```
+
+---
+
+## Runtime Context
+
+Version 2 introduces runtime-aware reviews.
+
+The `execution` object is optional and provides runtime information that helps the AI generate more accurate reviews.
+
+If omitted, the review service performs traditional static code analysis.
+
+### execution.status
+
+Possible values
+
+- success
+- failed
+- not_executed
+
+### execution.stdout
+
+Program standard output.
+
+### execution.stderr
+
+Program standard error.
+
+### execution.exit_code
+
+Exit status returned by the execution environment.
+
+### Notes
+
+- The execution object is optional.
+- If `status` is `not_executed`, the remaining fields may be omitted.
+- Runtime information should reflect the most recent execution of the submitted source code.
 
 ---
 
@@ -603,6 +701,15 @@ POST /api/v1/review
 | language | string | Yes | Programming language |
 | review_focus | string | Yes | Area to analyze |
 | code | string | Yes | Source code |
+
+
+| execution Field | Type    | Required |
+| --------------- | ------- | -------- |
+| status          | string  | Yes      |
+| stdout          | string  | No       |
+| stderr          | string  | No       |
+| exit_code       | integer | No       |
+
 
 ---
 

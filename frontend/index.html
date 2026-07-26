@@ -153,6 +153,11 @@
 
                 <!-- Editor Action Helpers -->
                 <div class="flex items-center space-x-2 self-end md:self-auto">
+                    <button type="button" id="open-file-btn"
+                        class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5">
+                        <span>📂 Open File</span>
+                    </button>
+                    <input type="file" id="file-input" class="hidden" />
                     <button type="button" id="load-sample-btn"
                         class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5">
                         <span>💡 Load Sample</span>
@@ -168,13 +173,21 @@
             <div class="relative mb-4">
                 <label for="code-input" class="sr-only">Source Code Input</label>
                 <textarea id="code-input" rows="12"
-                    placeholder="Paste or write your source code here..."
+                    placeholder="Paste or write your source code here, or click 'Open File' / drag & drop a file..."
                     class="w-full bg-surface-950 text-primary-100 font-mono text-sm p-4 rounded-xl border border-surface-800 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:outline-none transition-colors resize-y leading-relaxed"
                     spellcheck="false"></textarea>
 
-                <!-- Metrics Footer -->
+                <!-- Metrics Footer & File Badge -->
                 <div class="flex items-center justify-between text-xs text-surface-200 px-2 mt-2">
-                    <span id="line-count">0 lines</span>
+                    <div class="flex items-center space-x-3">
+                        <span id="line-count">0 lines</span>
+                        <!-- Imported File Badge -->
+                        <div id="imported-file-badge" class="hidden items-center space-x-1.5 bg-primary-500/10 text-primary-300 border border-primary-500/20 px-2.5 py-0.5 rounded-md font-mono text-xs">
+                            <span>📄</span>
+                            <span id="imported-filename"></span>
+                            <button type="button" id="remove-file-btn" class="text-surface-400 hover:text-white font-bold ml-1" title="Remove imported file">&times;</button>
+                        </div>
+                    </div>
                     <span id="char-count">0 chars</span>
                 </div>
             </div>

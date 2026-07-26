@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Architecture Design
 
@@ -19,6 +19,7 @@
 
 # Table of Contents
 
+### Part 1 — System Architecture Overview
 1. Introduction
 2. Architectural Goals
 3. Design Principles
@@ -31,6 +32,47 @@
 10. AI Layer
 11. Security Layer
 12. Future Expansion
+
+### Part 2 — Detailed Subsystem Architecture
+13. Backend Architectural Blueprint
+14. API Gateway / Controller Layer
+15. Validation Engine Architecture
+16. Review Engine Architecture
+17. Rewrite Engine Architecture
+18. Centralized Prompt Builder Architecture
+19. AI Provider Abstraction Layer
+20. Response Parser Architecture
+21. Configuration Management Subsystem
+22. Logging & Monitoring Subsystem
+23. Subsystem Dependency & Communication Matrix
+24. Architectural Trade-off Analysis
+
+### Part 3 — Technical Standards & Operational Models
+25. Frontend Architecture Blueprint
+26. State Management Model
+27. Event Architecture
+28. UI Component Hierarchy
+29. External UI Libraries Integration
+30. API Communication Layer
+31. Memory Management & Performance
+32. Error Boundaries & Fallback UI
+33. Security Architecture
+34. Extensibility Blueprint
+35. Deployment Architecture
+36. Architecture Decision Records (ADR)
+
+### Part 4 — Engineering Governance & Operational Execution
+37. Coding Standards & Conventions
+38. Recommended Design Patterns
+39. Dependency Graph
+40. Extension Points
+41. Migration Strategy
+42. Testing Architecture
+43. Future Microservices Evolution
+44. Architecture Review Checklist
+45. Architecture Summary
+46. References
+47. Conclusion
 
 ---
 

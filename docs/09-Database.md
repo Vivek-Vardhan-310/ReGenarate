@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -22,15 +22,31 @@
 
 # Table of Contents
 
+### Part 1 — Storage Strategy & Current Architecture
 1. Purpose
 2. Database Philosophy
 3. Current Storage Strategy
 4. Configuration Storage
 5. Logging Strategy
 6. Future Persistence
+
+### Part 2 — Entity Modeling & Schema Planning
 7. Proposed Entities
 8. Entity Definitions
 9. Data Ownership
+10. Schema Relationships
+11. Migration Strategy
+12. Database Technology Comparison
+13. Indexing Strategy
+14. Security & Compliance
+
+### Part 3 — Operational Governance & Specifications
+15. Backup & Recovery
+16. Technical Constraints
+17. Risk Analysis
+18. Developer Guidelines
+19. Database Checklist
+20. Final Summary
 
 ---
 

@@ -44,6 +44,11 @@ SUPPORTED_LANGUAGES: list[str] = [
     "sql",
     "html",
     "css",
+    "ruby",
+    "scala",
+    "xml",
+    "json",
+    "yaml",
 ]
 
 # ==========================================

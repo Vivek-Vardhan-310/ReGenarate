@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -24,6 +24,7 @@
 
 # Table of Contents
 
+### Part 1 — Strategy Foundations & Test Levels
 1. Purpose
 2. Testing Philosophy
 3. Quality Objectives
@@ -33,6 +34,38 @@
 7. Unit Testing
 8. Backend Testing
 9. Frontend Testing
+10. API Testing
+11. Integration Testing
+12. End-to-End (E2E) Testing
+13. Performance Testing
+14. Security Testing
+15. Accessibility Testing
+
+### Part 2 — Quality Assurance Workflows
+16. AI Integration Testing
+17. Cross-Browser Testing
+18. Edge Case & Failure Mode Testing
+19. Regression Testing
+20. Acceptance Testing
+21. Manual Verification Checklists
+22. Automated Testing Pipeline
+23. Test Data Management
+24. Defect Management & Tracking
+25. Quality Metrics & Reporting
+
+### Part 3 — Operational Governance & Documentation Index
+26. Testing Governance
+27. Test Environment Setup
+28. Continuous Integration Strategy
+29. Release Testing Policy
+30. Disaster Recovery Testing
+31. Test Automation Maintenance
+32. Final Project Testing Checklist
+33. Continuous Improvement
+34. Testing Principles Recap
+35. Documentation Suite Conclusion
+
+---
 
 ---
 
@@ -526,11 +559,24 @@ Open Application
 
 ↓
 
-Enter Source Code
+Open File (Optional)
 
 ↓
 
-Choose Language
+Paste or Edit Code
+
+↓
+
+Language Auto-Detected
+(or Manually Selected)
+
+↓
+
+(Optional) Run Code
+
+↓
+
+Execution Console Updated
 
 ↓
 
@@ -538,7 +584,13 @@ Select Review Focus
 
 ↓
 
-Submit Request
+Submit Review Request
+
+↓
+
+Backend Sends
+
+(Source Code + Runtime Context)
 
 ↓
 
@@ -546,10 +598,12 @@ Receive AI Review
 
 ↓
 
-Render Markdown
+Render Markdown Review
 ```
 
 Every step should complete successfully.
+
+If the user does not execute the program first, the review should proceed using static code analysis only.
 
 ---
 
@@ -560,15 +614,20 @@ Open Application
 
 ↓
 
-Paste Code
+Open File (Optional)
 
 ↓
 
-Select Language
+Paste or Edit Code
 
 ↓
 
-Submit Rewrite
+Language Auto-Detected
+(or Manually Selected)
+
+↓
+
+Submit Rewrite Request
 
 ↓
 
@@ -576,10 +635,10 @@ Receive Improved Code
 
 ↓
 
-Display Result
+Display Rewritten Code
 ```
 
-The rewritten code should preserve the original program's intended behavior.
+The rewrite workflow should preserve the program's intended functionality while improving readability, maintainability, and overall code quality.
 
 ---
 
@@ -1632,6 +1691,6 @@ The documentation should be treated as a living resource. As the application evo
 
 ---
 
-**Project Documentation Version:** 1.0
+**Project Documentation Version:** 2.0
 
 **Documentation Status:** Complete

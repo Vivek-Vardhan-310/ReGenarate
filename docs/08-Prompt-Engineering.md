@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -22,6 +22,7 @@
 
 # Table of Contents
 
+### Part 1 — Prompt Design Foundations
 1. Purpose
 2. Prompt Engineering Philosophy
 3. AI Communication Principles
@@ -31,6 +32,43 @@
 7. Context Management
 8. Token Optimization
 9. Deterministic Prompting
+
+### Part 2 — Prompt Variables, Construction & Templates
+10. Prompt Variables (Version 2 Runtime-Aware)
+11. Review Prompt Template
+12. Rewrite Prompt Template
+13. Dynamic Prompt Construction
+14. System Prompts vs User Prompts
+15. Focus Area Prompt Injection
+16. Language-Specific Prompt Tuning
+17. Structured Response Enforcement
+18. Error-Handling Prompts
+19. Edge Case Prompt Strategies
+
+### Part 3 — Quality Control & Optimization
+20. Hallucination Reduction Strategies
+21. Output Consistency Rules
+22. Few-Shot vs Zero-Shot Strategy
+23. Prompt Testing Methodology
+24. Prompt Versioning Policy
+25. Security & Prompt Injection Defense
+26. Temperature & Sampling Strategy
+27. Response Parsing Alignment
+28. Prompt Performance Metrics
+29. Prompt Engineering Checklist
+
+### Part 4 — Governance & Evolution Strategy
+30. Multi-Model Prompt Compatibility
+31. Prompt Maintenance Rules
+32. Production Prompt Audit
+33. Cost Optimization
+34. Prompt Engineering Anti-Patterns
+35. AI Capability Roadmap
+36. Prompt Principles Recap
+37. Final Summary
+38. References
+39. Document Conclusion
+40. Appendices & Reference Examples
 
 ---
 
@@ -42,8 +80,8 @@ Its goals are to:
 
 - Produce consistent AI responses.
 - Improve output quality.
-- Reduce hallucinations.
-- Optimize token usage.
+- Reduce hallucinations through runtime-aware execution context.
+- Optimize token usage while preserving execution evidence.
 - Enable prompt versioning.
 - Support future AI providers without redesigning prompts.
 
@@ -94,7 +132,7 @@ Every prompt should define:
 - The desired output.
 - Formatting requirements.
 - Constraints.
-- Relevant context.
+- Relevant context (including runtime execution results when available).
 
 The model should never need to infer missing requirements.
 
@@ -154,11 +192,11 @@ Formatting Requirements
 
 ↓
 
-Context
+Runtime & Input Context (Execution Status, Exit Code, Stdout, Stderr)
 
 ↓
 
-User Code
+User Source Code
 
 ```
 
@@ -203,7 +241,7 @@ Output Format
 
 ↓
 
-Input Context
+Runtime Context (Execution Status, Exit Code, Stdout, Stderr)
 
 ↓
 
@@ -267,12 +305,15 @@ Examples
 
 ### Context
 
-Contains only information required to perform the task.
+Contains runtime context and execution results required to perform the task.
 
 Examples
 
 - Programming language.
 - Review focus.
+- Execution status (`execution_status`).
+- Exit code (`exit_code`).
+- Output streams (`stdout`, `stderr`).
 - Coding standards (future).
 
 ---
@@ -290,7 +331,7 @@ The user's source code should not be modified before insertion except for safe n
 Every prompt follows a predictable lifecycle.
 
 ```
-User Request
+User Request (Source Code & Execution Results)
 
 ↓
 
@@ -302,11 +343,11 @@ Load Template
 
 ↓
 
-Substitute Variables
+Substitute Variables (Source Code & Runtime Context)
 
 ↓
 
-Build Prompt
+Build Prompt (Code + Stdout + Stderr + Status + Exit Code)
 
 ↓
 
@@ -326,7 +367,7 @@ Return Result
 
 ```
 
-Prompt construction should be deterministic and reproducible.
+Prompt construction should be deterministic and reproducible, ensuring runtime context is fully included before sending the request to the LLM.
 
 ---
 
@@ -365,13 +406,14 @@ Task instructions may vary between endpoints.
 
 ## Input Data
 
-Contains runtime values.
+Contains runtime values and execution data.
 
 Examples
 
 - Programming language.
 - Review focus.
 - Source code.
+- Execution results (`execution_status`, `exit_code`, `stdout`, `stderr`).
 
 Input data should never contain application instructions.
 
@@ -386,8 +428,9 @@ The model should receive only the context required for the current request.
 ## Include
 
 - Programming language.
-- Source code.
+- Source code (imported into the editor).
 - Review focus (if applicable).
+- Runtime execution context (`execution_status`, `exit_code`, `stdout`, `stderr`).
 - Output requirements.
 
 ---
@@ -426,16 +469,17 @@ Prompt templates should prioritize information density over verbosity.
 
 ---
 
-## Large Source Files
+## Large Source Files & Execution Outputs
 
-For future versions, consider:
+For large source files and output logs:
 
+- Output stream truncation (if logs exceed token limits while preserving stack traces).
 - Chunking.
 - Summarization.
 - Incremental review.
 - File-by-file analysis.
 
-Version 1 processes one code submission per request.
+Version 2 processes imported source code files along with optional execution console results (`stdout`, `stderr`, `execution_status`, `exit_code`) per request.
 
 ---
 
@@ -501,7 +545,7 @@ Output Contract
 
 ↓
 
-Runtime Context
+Runtime Context (Execution Status, Exit Code, Stdout, Stderr)
 
 ↓
 
@@ -519,12 +563,15 @@ Prompt templates contain placeholders that are replaced during request processin
 ---
 
 ## Supported Variables
-
 | Variable | Description |
 |----------|-------------|
 | `{{language}}` | Programming language |
 | `{{review_focus}}` | Requested review category |
 | `{{code}}` | User-submitted source code |
+| `{{execution_status}}` | Status of the most recent execution (success, failed, not_executed) |
+| `{{stdout}}` | Standard output produced by the program |
+| `{{stderr}}` | Standard error produced during execution |
+| `{{exit_code}}` | Exit code returned by the execution environment |
 | `{{max_response_length}}` | Optional future response limit |
 | `{{project_rules}}` | Future coding standards |
 
@@ -537,11 +584,23 @@ Variables should be escaped or inserted safely to preserve the original source c
 Template
 
 ```
-Language:
+Programming Language:
 {{language}}
 
 Review Focus:
 {{review_focus}}
+
+Execution Status:
+{{execution_status}}
+
+Exit Code:
+{{exit_code}}
+
+Standard Output:
+{{stdout}}
+
+Standard Error:
+{{stderr}}
 
 Code:
 
@@ -551,16 +610,29 @@ Code:
 After substitution
 
 ```
-Language:
-Java
+Programming Language:
+Python
 
 Review Focus:
-Performance
+Security & Error Handling
+
+Execution Status:
+failed
+
+Exit Code:
+1
+
+Standard Output:
+
+Standard Error:
+ZeroDivisionError: division by zero
 
 Code:
 
-public class Example {
-}
+def divide(a, b):
+    return a / b
+
+divide(10, 0)
 ```
 
 ---
@@ -610,7 +682,7 @@ The system prompt should:
 
 ## Purpose
 
-Generates a structured Markdown review of the submitted code.
+Generates a structured Markdown review of the submitted code and execution results.
 
 ---
 
@@ -619,15 +691,38 @@ Generates a structured Markdown review of the submitted code.
 ```
 Task
 
-Review the following {{language}} source code.
+Review the following {{language}} source code and execution context.
 
-Focus primarily on:
+Programming Language:
+{{language}}
 
+Source Code:
+{{code}}
+
+Execution Status:
+{{execution_status}}
+
+Exit Code:
+{{exit_code}}
+
+Standard Output:
+{{stdout}}
+
+Standard Error:
+{{stderr}}
+
+Review Focus:
 {{review_focus}}
 
-Your review should evaluate:
+Instructions:
+- Use runtime information whenever available during code review.
+- Runtime evidence takes precedence over static assumptions.
+- Distinguish between compile-time errors and runtime errors.
+- Correlate stack traces in standard error with source code locations and functions.
+- If execution data is unavailable (e.g. status is not_executed or execution results are absent), perform normal static analysis.
 
-- Correctness
+Your review should evaluate:
+- Correctness and runtime execution defects
 - Readability
 - Maintainability
 - Performance (when applicable)
@@ -656,12 +751,6 @@ Use exactly the following structure.
 # Recommendations
 
 # Example Improvements
-
----
-
-Source Code
-
-{{code}}
 ```
 
 ---
@@ -832,17 +921,41 @@ The rewrite output should:
 ## Example Review Request
 
 ```
-Language:
+Programming Language:
 Python
-
-Review Focus:
-Security
 
 Source Code:
 
-def login(password):
-    if password == "admin":
-        print("Access")
+def divide(a, b):
+    return a / b
+
+result = divide(10, 0)
+print(result)
+
+Execution Status:
+failed
+
+Exit Code:
+1
+
+Standard Output:
+
+Standard Error:
+ZeroDivisionError: division by zero
+  File "main.py", line 4, in divide
+    return a / b
+  File "main.py", line 6, in <module>
+    result = divide(10, 0)
+
+Review Focus:
+Security & Error Handling
+
+Instructions:
+- Use runtime information whenever available during code review.
+- Runtime evidence takes precedence over static assumptions.
+- Distinguish between compile-time errors and runtime errors.
+- Correlate stack traces in standard error with source code locations and functions.
+- If execution data is unavailable, perform normal static analysis.
 ```
 
 Expected output
@@ -850,19 +963,28 @@ Expected output
 ```
 # Summary
 
-...
+The Python script executes function `divide(10, 0)` which encounters an unhandled `ZeroDivisionError` at runtime, causing process exit code 1.
 
 # Strengths
 
-...
+- Direct and concise function implementation.
 
 # Issues
 
-...
+- High: Unhandled ZeroDivisionError exception leading to program termination (exit code 1).
+- Medium: Missing defensive check for zero divisors.
 
 # Recommendations
 
-...
+- Validate inputs before performing arithmetic division.
+- Implement exception handling to manage runtime exceptions gracefully.
+
+# Example Improvements
+
+def divide(a: float, b: float) -> float:
+    if b == 0:
+        raise ValueError("Divisor cannot be zero.")
+    return a / b
 ```
 
 ---
@@ -897,8 +1019,20 @@ Before a prompt is sent to the AI, verify:
 - The correct template is selected.
 - The output contract matches the endpoint.
 - Runtime values are inserted in the proper locations.
+- Runtime context (execution status, stdout, stderr, exit code) is included before sending the request to the LLM.
 
 Prompt construction should fail fast if template generation is incomplete.
+
+---
+
+## Runtime Context Rules
+
+When constructing prompts with execution console results:
+
+- **Optionality:** Runtime information is optional; if code execution was not performed or execution context is unavailable, the prompt defaults to normal static analysis.
+- **Exact Output Preservation:** `stdout` and `stderr` streams must be preserved exactly as captured by the execution console without altering log contents.
+- **Stack Trace Integrity:** Stack traces within `stderr` must not be modified, summarized, or stripped before prompt construction.
+- **Execution Status Inclusion:** The `execution_status` (e.g., `success`, `failed`, `not_executed`) and `exit_code` should be included whenever execution occurs.
 
 ---
 
@@ -1145,9 +1279,9 @@ Human evaluation should complement automated testing.
 
 # 23. Hallucination Reduction
 
-Language models may generate information that is unsupported by the provided code.
+Language models may generate information that is unsupported by the provided code or speculate incorrectly about runtime behavior.
 
-Prompt design should minimize this behavior.
+Prompt design and runtime execution integration minimize this behavior.
 
 ---
 
@@ -1155,17 +1289,28 @@ Prompt design should minimize this behavior.
 
 Explicitly instruct the model to:
 
-- Base conclusions only on the submitted code.
-- State assumptions clearly.
-- Avoid inventing missing implementation details.
+- Base conclusions on empirical runtime execution data whenever available.
+- State assumptions clearly when execution data is absent.
+- Avoid inventing missing implementation details or unverified runtime behaviors.
 - Avoid guessing project requirements.
+- Leverage execution logs (`stdout`, `stderr`, exit codes) to verify bug hypotheses rather than speculating.
+
+---
+
+## Runtime Execution Data Advantage
+
+Integrating built-in execution console results (`stdout`, `stderr`, `execution_status`, `exit_code`) into the prompt significantly reduces speculative analysis and improves debugging accuracy:
+
+- **Empirical Grounding:** Real execution output provides definitive proof of runtime errors and behavior, replacing speculative static inference.
+- **Traceback Correlation:** Exact stack traces in `stderr` anchor AI recommendations directly to affected source code lines and functions.
+- **Precision Diagnostics:** Differentiating compile-time syntax errors from runtime exceptions eliminates hallucinated execution outcomes.
 
 ---
 
 ## Example Constraint
 
 ```
-If the provided code does not contain enough information to reach a conclusion, explain the limitation rather than making assumptions.
+If the provided code does not contain enough information to reach a conclusion, explain the limitation rather than making assumptions. Prioritize empirical runtime evidence over static assumptions.
 ```
 
 ---
@@ -1648,25 +1793,24 @@ Task instructions should remain provider-independent whenever possible.
 
 # 35. AI Capability Roadmap
 
-Prompt templates should evolve as model capabilities improve.
+Prompt templates should evolve as model capabilities and system capabilities improve.
 
 ---
 
 ## Version 1
 
-- Code review
+- Static code review
 - Code rewriting
 
 ---
 
 ## Version 2
 
-Potential additions
-
-- Code explanation
-- Unit test generation
-- Documentation generation
-- Complexity analysis
+- Source file import into the editor
+- Built-in execution console integration
+- Runtime-aware AI code reviews
+- Backend integration delivering both source code and execution results (`stdout`, `stderr`, `execution_status`, `exit_code`) to the LLM
+- Stack trace correlation with source code
 
 ---
 
@@ -1818,6 +1962,6 @@ These practices create a strong foundation for reliable AI-assisted code review 
 
 **Document Status:** Approved
 
-**Prompt Version:** 1.0
+**Prompt Version:** 2.0
 
 **Governance Status:** Active

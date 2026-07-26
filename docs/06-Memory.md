@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -32,6 +32,18 @@
 7. AI Context
 8. Data Lifecycle
 9. Memory Flow
+10. Privacy & Data Safety
+11. Garbage Collection & Memory Management
+12. Memory Footprint Targets
+13. Storage Options Comparison
+14. Future Persistence Migration
+15. Memory Audit Checklist
+16. Technical Constraints
+17. Risk Analysis
+18. Developer Guidelines
+19. Memory Management Checklist
+20. Principles Recap
+21. Final Summary
 
 ---
 

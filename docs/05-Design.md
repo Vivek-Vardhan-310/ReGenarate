@@ -2,7 +2,7 @@
 
 **Project:** AI Code Review & Rewrite Agent
 
-**Version:** 1.0
+**Version:** 2.0
 
 **Status:** Planning
 
@@ -22,6 +22,7 @@
 
 # Table of Contents
 
+### Part 1 — Design Foundations
 1. Purpose
 2. Design Philosophy
 3. User Experience Goals
@@ -31,6 +32,82 @@
 7. Color System
 8. Typography
 9. Spacing System
+
+### Part 2 — UI Layout & Component Design
+10. Iconography
+11. Component Hierarchy
+12. Page Layout Architecture
+13. Navigation & Header Specification
+14. Editor Workspace Component
+15. Toolbar Component
+16. Review Focus Selector Component
+17. Language Selector Component
+18. Execution Console Component (Version 2)
+19. Review Results Output Component
+20. Rewrite Output Component
+21. Severity Badge Specification
+
+### Part 3 — State Management, Motion & Interaction
+22. Loading & Processing States
+23. Error & Empty States
+24. Notification & Toast Component
+25. Copy & Action Feedback
+26. Micro-Interactions & Animation Guidelines
+27. Responsive Design System
+28. Accessibility (WCAG 2.1 AA) Specification
+29. Dark Mode Theme System
+30. High Contrast Accessibility Mode
+
+### Part 4 — Governance, Audits & Future Specifications
+31. UI Performance Benchmarks
+32. Design System Documentation Rules
+33. Cross-Browser Layout Checklist
+34. Visual Regression Prevention Rules
+35. Asset Management Guidelines
+36. Code-to-Design Mapping
+37. Mobile Usability Audit Rules
+38. Design Maintenance Rules
+39. Component Library Guidelines
+40. Prototype & Testing Rules
+41. Design Handoff Rules
+42. Internationalization (i18n) Layout Guidelines
+43. Design System Versioning Rules
+44. Feedback Loop & Usability Audits
+45. Visual Hierarchy Guidelines
+46. Focus State Guidelines
+47. Form Design Rules
+48. Modal & Dialog Rules
+49. Tooltip Guidelines
+50. Table Design Rules
+51. Code Block Display Rules
+52. Button Hierarchy Guidelines
+53. Card Component Rules
+54. Tab Component Rules
+55. Progress Indicator Guidelines
+56. Skeleton Loading Rules
+57. Empty State Visual Rules
+58. Error Notification Guidelines
+59. Confirmation Dialog Rules
+60. Responsive Breakpoint Rules
+61. Touch Target Size Guidelines
+62. Keyboard Shortcuts UI Guidelines
+63. Print Stylesheet Rules
+64. Content Density Rules
+65. Animation Duration Guidelines
+66. Easing Function Guidelines
+67. Z-Index Scale Rules
+68. Shadow System Guidelines
+69. Border System Rules
+70. Radius System Guidelines
+71. Opacity Scale Rules
+72. Design System Changelog Rules
+73. Future Design Tooling
+74. Design Review Process
+75. UI Consistency Checklist
+76. Future Design Roadmap
+77. Design Anti-Patterns
+78. Design Principles Recap
+79. Final Summary
 
 ---
 
@@ -1703,12 +1780,24 @@ Empty states should always guide users toward the next action.
 ## Review Flow
 
 ```
-
-Paste Code
+Open File (Optional)
 
 ↓
 
-Select Language
+Paste or Edit Code
+
+↓
+
+Language Auto-Detected
+(or Manually Selected)
+
+↓
+
+(Optional) Run Code
+
+↓
+
+Execution Console Updated
 
 ↓
 
@@ -1720,25 +1809,32 @@ Review Button
 
 ↓
 
-Loading
+Request Sent
+
+(Source Code + Runtime Context)
 
 ↓
 
-Response
+AI Analysis
 
 ↓
 
-Markdown Render
-
+Markdown Review Rendered
 ```
-
 ---
 
 ## Rewrite Flow
-
 ```
+Open File (Optional)
 
-Review Complete
+↓
+
+Paste or Edit Code
+
+↓
+
+Language Auto-Detected
+(or Manually Selected)
 
 ↓
 
@@ -1746,20 +1842,15 @@ Rewrite Button
 
 ↓
 
-Loading
+Request Sent
 
 ↓
 
-AI Response
+AI Rewrite
 
 ↓
 
-Syntax Highlight
-
-↓
-
-Copy
-
+Code Displayed
 ```
 
 ---
@@ -2649,6 +2740,108 @@ The following indicators can be used to evaluate the quality of the user experie
 
 These metrics should guide continuous improvement rather than serve as rigid targets.
 
+# V2 UI Enhancements
+
+## Updated Editor Layout
+
+The editor workspace is expanded into a development-style interface.
+
+----------------------------------------------------
+
+Toolbar
+
+----------------------------------------------------
+
+Code Editor
+
+----------------------------------------------------
+
+Execution Console
+
+----------------------------------------------------
+
+AI Review
+
+----------------------------------------------------
+
+AI Rewrite
+
+----------------------------------------------------
+
+## Toolbar
+
+The editor toolbar should include:
+
+- Open File
+- Clear Editor
+- Review Code
+- Rewrite Code
+- Run Code (if supported)
+
+The toolbar should remain responsive across different screen sizes.
+
+---
+
+## File Picker
+
+Users may load source files directly into the editor.
+
+Supported file types should match the programming languages supported by the AI.
+
+The selected file should:
+
+- populate the editor
+- automatically detect the language
+- display the filename
+- validate extension before loading
+
+---
+
+## Execution Console
+
+The execution console displays runtime information.
+
+Sections:
+
+- Standard Output
+- Standard Error
+- Exit Code
+- Execution Time
+
+Console actions:
+
+- Copy Output
+- Clear Console
+- Collapse/Expand
+
+Errors should be syntax highlighted where applicable.
+
+---
+
+## AI Review Layout
+
+When runtime output exists, the review page should display:
+
+Summary
+
+↓
+
+Runtime Analysis
+
+↓
+
+Static Analysis
+
+↓
+
+Recommendations
+
+↓
+
+Improved Code
+
+Runtime findings should appear before general code review.
+
 ---
 
 # End of Part 5
@@ -3041,14 +3234,14 @@ Potential improvements
 
 ## Version 2.0
 
-Potential improvements
+Version 2 UI Additions
 
-- User dashboard
-- Review history interface
-- Saved code snippets
-- Team workspaces
-- Advanced filtering
-- Interactive analytics
+- Integrated Open File & File Picker UI
+- Drag-and-drop file import visual cues
+- Integrated Execution Console panel
+- Imported file badge & status indicators
+- User dashboard (Planned)
+- Review history interface (Planned)
 
 ---
 
@@ -3057,7 +3250,6 @@ Potential improvements
 Potential improvements
 
 - Multi-project management
-- Drag-and-drop file uploads
 - Repository explorer
 - Visual code comparison
 - Split-screen review mode
