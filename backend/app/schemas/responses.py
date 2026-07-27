@@ -22,7 +22,7 @@ Error Response:
     }
 """
 
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -109,6 +109,115 @@ class HealthData(BaseModel):
     version: str = Field(
         default="1.0.0",
         description="Application version.",
+    )
+
+
+class IssueItem(BaseModel):
+    """
+    A single code issue identified by the AI review.
+
+    Mirrors the frontend Issue data model exactly so the frontend
+    can consume every field without transformation.
+    """
+
+    id: int = Field(
+        ...,
+        description="Sequential issue identifier starting from 1.",
+    )
+    severity: str = Field(
+        ...,
+        description="Issue severity: critical | high | medium | low.",
+    )
+    category: Optional[str] = Field(
+        default=None,
+        description="Issue category (e.g. Security, Performance).",
+    )
+    confidence: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="AI confidence score between 0.0 and 1.0.",
+    )
+    title: str = Field(
+        ...,
+        description="Short, descriptive issue title.",
+    )
+    description: str = Field(
+        ...,
+        description="Detailed explanation of the issue.",
+    )
+    line: Optional[int] = Field(
+        default=None,
+        description="1-based line number where the issue starts.",
+    )
+    column: Optional[int] = Field(
+        default=None,
+        description="1-based column number where the issue starts.",
+    )
+    endLine: Optional[int] = Field(
+        default=None,
+        description="1-based line number where the issue ends.",
+    )
+    endColumn: Optional[int] = Field(
+        default=None,
+        description="1-based column number where the issue ends.",
+    )
+    suggestion: Optional[str] = Field(
+        default=None,
+        description="Recommended fix or improvement.",
+    )
+    fixSnippet: Optional[str] = Field(
+        default=None,
+        description="Concrete code snippet demonstrating the fix.",
+    )
+    fixType: Optional[str] = Field(
+        default=None,
+        description="Type of fix: replace | insert | delete | refactor.",
+    )
+
+
+class SeverityCounts(BaseModel):
+    """
+    Aggregated severity counts for the severity dashboard.
+    """
+
+    critical: int = Field(default=0, description="Number of critical issues.")
+    high: int     = Field(default=0, description="Number of high issues.")
+    medium: int   = Field(default=0, description="Number of medium issues.")
+    low: int      = Field(default=0, description="Number of low issues.")
+
+
+class StructuredReviewData(BaseModel):
+    """
+    Structured AI review response payload.
+
+    Contains both structured issue data (for the IDE panel) and a
+    markdown field (for backward compatibility with legacy renderers).
+    """
+
+    summary: str = Field(
+        default="",
+        description="High-level assessment of the submitted code.",
+    )
+    severity: SeverityCounts = Field(
+        default_factory=SeverityCounts,
+        description="Aggregated issue counts per severity level.",
+    )
+    issues: List[IssueItem] = Field(
+        default_factory=list,
+        description="Detailed list of identified issues.",
+    )
+    strengths: List[str] = Field(
+        default_factory=list,
+        description="Positive aspects of the submitted code.",
+    )
+    recommendations: List[str] = Field(
+        default_factory=list,
+        description="High-level improvement recommendations.",
+    )
+    markdown: str = Field(
+        default="",
+        description="Full review as Markdown text (backward-compatibility field).",
     )
 
 

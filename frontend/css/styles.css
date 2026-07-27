@@ -186,3 +186,511 @@ body {
     color: #7dd3fc;
     border: 1px solid rgba(14, 165, 233, 0.3);
 }
+
+/* ==========================================
+   Monaco Editor Container
+   ========================================== */
+
+#monaco-editor-container {
+    height: 440px;
+    border: 1px solid #1e293b;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    position: relative;
+    transition: border-color 0.2s ease;
+}
+
+#monaco-editor-container.drag-over {
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
+/* ==========================================
+   Monaco Line Decorations (subtle backgrounds)
+   ========================================== */
+
+/* Critical — subtle red wash */
+.issue-line-critical {
+    background: rgba(239, 68, 68, 0.07) !important;
+}
+
+/* High — subtle orange wash */
+.issue-line-high {
+    background: rgba(249, 115, 22, 0.07) !important;
+}
+
+/* Medium — subtle amber wash */
+.issue-line-medium {
+    background: rgba(234, 179, 8, 0.07) !important;
+}
+
+/* Low — subtle green wash */
+.issue-line-low {
+    background: rgba(34, 197, 94, 0.06) !important;
+}
+
+/* ==========================================
+   Monaco Glyph Margin Icons
+   CSS-only — no emoji OS dependency.
+   Unicode symbols render identically across
+   Windows, macOS, and Linux.
+   ========================================== */
+
+.issue-glyph-critical,
+.issue-glyph-high,
+.issue-glyph-medium,
+.issue-glyph-low {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+    font-family: 'JetBrains Mono', 'Consolas', monospace !important;
+    width: 100% !important;
+    height: 100% !important;
+    cursor: pointer;
+}
+
+/* Filled circle — critical error */
+.issue-glyph-critical::before {
+    content: "●";
+    color: #ef4444;
+    text-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+}
+
+/* Upward triangle — high severity warning */
+.issue-glyph-high::before {
+    content: "▲";
+    color: #f97316;
+    text-shadow: 0 0 4px rgba(249, 115, 22, 0.4);
+}
+
+/* Diamond — medium severity */
+.issue-glyph-medium::before {
+    content: "◆";
+    color: #eab308;
+    text-shadow: 0 0 4px rgba(234, 179, 8, 0.4);
+}
+
+/* Info circle — low severity */
+.issue-glyph-low::before {
+    content: "ℹ";
+    color: #22c55e;
+    text-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+}
+
+/* ==========================================
+   Severity Dashboard Cards
+   ========================================== */
+
+.severity-dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+@media (max-width: 640px) {
+    .severity-dashboard {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.severity-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.875rem 0.5rem;
+    background: var(--card-bg, rgba(255, 255, 255, 0.03));
+    border: 1px solid #1e293b;
+    border-left-width: 3px;
+    border-radius: 0.6rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    text-align: center;
+    position: relative;
+}
+
+.severity-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.severity-card:active {
+    transform: translateY(0);
+}
+
+.severity-card-active {
+    background: rgba(255, 255, 255, 0.07) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+.severity-card-icon {
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.severity-card-count {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+}
+
+.severity-card-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+}
+
+/* Icon colors for severity cards */
+.sev-icon-critical { color: #ef4444; }
+.sev-icon-high     { color: #f97316; }
+.sev-icon-medium   { color: #eab308; }
+.sev-icon-low      { color: #22c55e; }
+
+/* ==========================================
+   Structured Review Layout
+   ========================================== */
+
+.structured-review {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.review-section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 0.6rem;
+}
+
+.review-summary-block {
+    padding: 1rem;
+    background: rgba(14, 165, 233, 0.04);
+    border: 1px solid rgba(14, 165, 233, 0.12);
+    border-radius: 0.6rem;
+}
+
+.review-summary-text {
+    font-size: 0.875rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.review-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.review-list li {
+    font-size: 0.875rem;
+    color: #cbd5e1;
+    padding: 0.4rem 0.6rem 0.4rem 1rem;
+    border-left: 2px solid #334155;
+    border-radius: 0 0.25rem 0.25rem 0;
+    line-height: 1.5;
+}
+
+.review-strengths-block .review-list li {
+    border-left-color: #22c55e;
+}
+
+.review-recommendations-block .review-list li {
+    border-left-color: #0ea5e9;
+}
+
+/* ==========================================
+   Findings — Grouped Issue Sections
+   ========================================== */
+
+.findings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.findings-empty {
+    font-size: 0.875rem;
+    color: #64748b;
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.findings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.findings-group-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #94a3b8;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.findings-group-count {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: #1e293b;
+    color: #64748b;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+}
+
+.findings-group-icon {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.findings-group-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* ==========================================
+   Issue Cards
+   ========================================== */
+
+.issue-card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 0.6rem;
+    padding: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.issue-card:hover {
+    border-color: #334155;
+    background: #111827;
+}
+
+.issue-card:focus-visible {
+    border-color: #0ea5e9 !important;
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25);
+}
+
+/* Active state — triggered by editor cursor sync */
+.issue-card-active {
+    border-color: #0ea5e9 !important;
+    background: rgba(14, 165, 233, 0.05) !important;
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.15);
+}
+
+.issue-card-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.issue-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.issue-severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.3rem;
+}
+
+.issue-line-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: #64748b;
+    background: #1e293b;
+    padding: 0.15rem 0.45rem;
+    border-radius: 0.3rem;
+}
+
+.issue-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.issue-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.issue-description {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.issue-suggestion {
+    background: rgba(14, 165, 233, 0.05);
+    border: 1px solid rgba(14, 165, 233, 0.1);
+    border-radius: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.issue-suggestion-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #38bdf8;
+}
+
+.issue-suggestion p {
+    font-size: 0.8rem;
+    color: #bae6fd;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.issue-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 0.25rem;
+    border-top: 1px solid #1e293b;
+}
+
+/* ==========================================
+   Show Fix / Apply Fix
+   ========================================== */
+
+.btn-show-fix {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #64748b;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: 0.3rem;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.btn-show-fix:hover {
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.show-fix-chevron {
+    font-size: 0.6rem;
+    transition: transform 0.2s ease;
+}
+
+.issue-fix-section {
+    background: #020617;
+    border: 1px solid #1e293b;
+    border-radius: 0.4rem;
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.fix-snippet {
+    margin: 0;
+    padding: 0.5rem 0.6rem;
+    background: #0f172a;
+    border-radius: 0.35rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    color: #7dd3fc;
+    line-height: 1.5;
+    border: 1px solid #1e293b;
+}
+
+.fix-snippet code {
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0;
+}
+
+.fix-placeholder {
+    font-size: 0.75rem;
+    color: #475569;
+    font-style: italic;
+    margin: 0;
+}
+
+.issue-fix-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Apply Fix — disabled placeholder for future implementation */
+.btn-apply-fix {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    cursor: not-allowed;
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
+}
+
+/* When Apply Fix is enabled (future): .btn-apply-fix:not(:disabled) { ... } */
+
