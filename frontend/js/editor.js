@@ -73,7 +73,6 @@ class EditorController {
             editor.onDidChangeModelContent(() => this.debouncedUpdateMetrics(150));
         }
     }
-    }
 
     populateDropdowns() {
         if (this.languageSelect && window.SUPPORTED_LANGUAGES_LIST) {

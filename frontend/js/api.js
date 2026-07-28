@@ -19,7 +19,13 @@ class ApiClient {
      * @param {string} baseUrl - Base URL for the API endpoints.
      * @param {number} defaultTimeoutMs - Default request timeout in milliseconds.
      */
-    constructor(baseUrl = `${import.meta.env.VITE_API_URL}/api/v1`, defaultTimeoutMs = 35000) {
+    constructor(baseUrl = null, defaultTimeoutMs = 35000) {
+        if (!baseUrl) {
+            const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+            const defaultHost = isLocal ? "http://localhost:8000" : "https://regenarate.onrender.com";
+            const envUrl = (typeof window !== "undefined" && window.VITE_API_URL) || (typeof window !== "undefined" && window.ENV && window.ENV.VITE_API_URL);
+            baseUrl = envUrl ? (envUrl.endsWith("/api/v1") ? envUrl : `${envUrl}/api/v1`) : `${defaultHost}/api/v1`;
+        }
         this.baseUrl = baseUrl;
         this.defaultTimeoutMs = defaultTimeoutMs;
     }

@@ -15,8 +15,20 @@
 
 "use strict";
 
+function getApiBaseUrl() {
+    if (typeof window !== "undefined" && window.VITE_API_URL) {
+        return window.VITE_API_URL.endsWith("/api/v1") ? window.VITE_API_URL : `${window.VITE_API_URL}/api/v1`;
+    }
+    if (typeof window !== "undefined" && window.ENV && window.ENV.VITE_API_URL) {
+        return window.ENV.VITE_API_URL.endsWith("/api/v1") ? window.ENV.VITE_API_URL : `${window.ENV.VITE_API_URL}/api/v1`;
+    }
+    const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    const defaultHost = isLocal ? "http://localhost:8000" : "https://regenarate.onrender.com";
+    return `${defaultHost}/api/v1`;
+}
+
 const APP_CONFIG = {
-    apiBaseUrl: `${import.meta.env.VITE_API_URL}/api/v1`,
+    apiBaseUrl: getApiBaseUrl(),
     appName: "AI Code Review & Rewrite Agent",
     version: "1.0.0",
 };
