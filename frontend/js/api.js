@@ -19,7 +19,7 @@ class ApiClient {
      * @param {string} baseUrl - Base URL for the API endpoints.
      * @param {number} defaultTimeoutMs - Default request timeout in milliseconds.
      */
-    constructor(baseUrl = "http://localhost:8000/api/v1", defaultTimeoutMs = 35000) {
+    constructor(baseUrl = `${import.meta.env.VITE_API_URL}/api/v1`, defaultTimeoutMs = 35000) {
         this.baseUrl = baseUrl;
         this.defaultTimeoutMs = defaultTimeoutMs;
     }

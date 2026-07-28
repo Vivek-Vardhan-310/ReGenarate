@@ -16,7 +16,7 @@
 "use strict";
 
 const APP_CONFIG = {
-    apiBaseUrl: "http://localhost:8000/api/v1",
+    apiBaseUrl: `${import.meta.env.VITE_API_URL}/api/v1`,
     appName: "AI Code Review & Rewrite Agent",
     version: "1.0.0",
 };
