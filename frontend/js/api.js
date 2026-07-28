@@ -126,6 +126,18 @@ class ApiClient {
             body: payload,
         });
     }
+
+    /**
+     * Performs POST /quick-fix request.
+     * @param {Object} payload - { language, code, issue }
+     * @returns {Promise<Object>} Quick fix response payload.
+     */
+    async submitQuickFix(payload) {
+        return this.request("/quick-fix", {
+            method: "POST",
+            body: payload,
+        });
+    }
 }
 
 // Global API Client Singleton

@@ -13,10 +13,11 @@ Per Architecture (docs/02-Architecture.md, Section 9 & 27):
 from fastapi import APIRouter, Depends, status
 
 from app.config.constants import API_PREFIX
-from app.schemas.requests import ReviewRequest, RewriteRequest
+from app.schemas.requests import ReviewRequest, RewriteRequest, QuickFixRequest
 from app.schemas.responses import SuccessResponse
 from app.services.review_service import ReviewService
 from app.services.rewrite_service import RewriteService
+from app.services.quick_fix_service import QuickFixService
 
 router = APIRouter(prefix=API_PREFIX, tags=["AI Operations"])
 
@@ -30,6 +31,11 @@ def get_review_service() -> ReviewService:
 def get_rewrite_service() -> RewriteService:
     """Dependency provider for RewriteService instance."""
     return RewriteService()
+
+
+def get_quick_fix_service() -> QuickFixService:
+    """Dependency provider for QuickFixService instance."""
+    return QuickFixService()
 
 
 @router.post(
@@ -78,3 +84,27 @@ async def rewrite_code(
         SuccessResponse containing the rewritten source code.
     """
     return await service.generate_rewrite(request)
+
+
+@router.post(
+    "/quick-fix",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate AI Quick Fix",
+    description="Generates a targeted fix for a specific code review issue.",
+)
+async def quick_fix_code(
+    request: QuickFixRequest,
+    service: QuickFixService = Depends(get_quick_fix_service),
+) -> SuccessResponse:
+    """
+    Endpoint to trigger a targeted AI quick fix.
+
+    Args:
+        request: Validated QuickFixRequest payload.
+        service: Injected QuickFixService instance.
+
+    Returns:
+        SuccessResponse containing the structured QuickFixData.
+    """
+    return await service.generate_quick_fix(request)

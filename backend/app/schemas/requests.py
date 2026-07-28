@@ -200,3 +200,75 @@ class RewriteRequest(BaseModel):
                 f"{MAX_CODE_LENGTH:,} characters."
             )
         return value
+
+
+class QuickFixIssue(BaseModel):
+    """
+    Represents the specific issue to be fixed.
+    Sent by the frontend when requesting a Quick Fix.
+    """
+
+    id: int = Field(..., description="Issue identifier.")
+    severity: str = Field(..., description="Issue severity.")
+    category: Optional[str] = Field(default=None, description="Issue category.")
+    title: str = Field(..., description="Issue title.")
+    description: str = Field(..., description="Detailed issue description.")
+    suggestion: Optional[str] = Field(default=None, description="Suggested fix.")
+    line: Optional[int] = Field(default=None, description="Starting line number.")
+    endLine: Optional[int] = Field(default=None, description="Ending line number.")
+    fixSnippet: Optional[str] = Field(default=None, description="Code snippet for the fix.")
+    fixType: Optional[str] = Field(default=None, description="Type of fix.")
+
+
+class QuickFixRequest(BaseModel):
+    """
+    Request model for POST /api/v1/quick-fix.
+    """
+
+    language: str = Field(
+        ...,
+        description="Programming language of the source code.",
+        examples=["java", "python"],
+    )
+    code: str = Field(
+        ...,
+        description="Original source code string.",
+    )
+    issue: QuickFixIssue = Field(
+        ...,
+        description="The specific issue to fix.",
+    )
+
+    @field_validator("language")
+    @classmethod
+    def validate_language_field(cls, value: str) -> str:
+        """Validates and normalizes the programming language."""
+        if not value or not value.strip():
+            raise ValueError("Programming language is required.")
+
+        normalized = normalize_language(value)
+        if normalized not in SUPPORTED_LANGUAGES:
+            supported_list = ", ".join(SUPPORTED_LANGUAGES)
+            raise ValueError(
+                f"Unsupported programming language '{value}'. "
+                f"Supported languages are: {supported_list}"
+            )
+        return normalized
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_field(cls, value: str) -> str:
+        """Validates the source code content and length."""
+        if not value or not value.strip():
+            raise ValueError("Source code cannot be empty.")
+
+        stripped = value.strip()
+        if len(stripped) < MIN_CODE_LENGTH:
+            raise ValueError("Source code is too short.")
+
+        if len(value) > MAX_CODE_LENGTH:
+            raise ValueError(
+                f"Source code exceeds the maximum allowed length of "
+                f"{MAX_CODE_LENGTH:,} characters."
+            )
+        return value

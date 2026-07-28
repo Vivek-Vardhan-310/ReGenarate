@@ -1,11 +1,25 @@
 /**
- * Code Editor Controller Module.
+ * EditorController — Monaco Adapter & UI Event Handler.
  *
- * Manages editor UI interactions: language selection, review focus selection,
- * debounced line numbering & character counting, sample code loading, and editor state.
+ * Acts as the thin adapter between the toolbar UI and MonacoManager.
+ * All public methods retain their original signatures so ReviewController,
+ * RewriteController, and app.js work without changes.
  *
- * Per Architecture (docs/02-Architecture.md, Section 33) & Phase 7 Optimization:
- * - Debounces editor input handlers to prevent layout thrashing.
+ * Changes from original:
+ *   - this.codeInput (textarea) replaced with window.Editor.manager calls.
+ *   - Language change also calls window.Editor.manager.setLanguage().
+ *   - Drag-and-drop attached to #monaco-editor-container div.
+ *   - updateMetrics() reads from Monaco instead of textarea.value.
+ *   - Initialization waits for 'monaco-ready' event if Monaco not yet loaded.
+ *
+ * Unchanged:
+ *   - Constructor signature.
+ *   - getEditorData() return shape.
+ *   - All public method names and behaviors.
+ *   - populateDropdowns(), setupFileInput(), handleFileImport(), etc.
+ *
+ * Per Architecture (docs/02-Architecture.md, Section 26).
+ * Per Rules (docs/03-Rules.md, JS-001).
  */
 
 "use strict";
@@ -13,32 +27,52 @@
 class EditorController {
     constructor(consoleController = null) {
         this.consoleController = consoleController;
-        this.languageSelect = document.getElementById("language-select");
-        this.focusSelect = document.getElementById("focus-select");
-        this.codeInput = document.getElementById("code-input");
-        this.charCounter = document.getElementById("char-count");
-        this.lineCounter = document.getElementById("line-count");
-        this.sampleBtn = document.getElementById("load-sample-btn");
-        this.clearBtn = document.getElementById("clear-editor-btn");
-        this.openFileBtn = document.getElementById("open-file-btn");
-        this.reloadFileBtn = document.getElementById("reload-file-btn");
-        this.fileInput = document.getElementById("file-input");
-        this.dropZone = document.getElementById("editor-dropzone");
-        this.dropOverlay = document.getElementById("drop-overlay");
-        this.importedBadge = document.getElementById("imported-file-badge");
-        this.importedFilename = document.getElementById("imported-filename");
-        this.removeFileBtn = document.getElementById("remove-file-btn");
-        this.importedFile = null;
-        this._debounceTimeout = null;
+        this.languageSelect  = document.getElementById("language-select");
+        this.focusSelect     = document.getElementById("focus-select");
+        this.charCounter     = document.getElementById("char-count");
+        this.lineCounter     = document.getElementById("line-count");
+        this.sampleBtn       = document.getElementById("load-sample-btn");
+        this.clearBtn        = document.getElementById("clear-editor-btn");
+        this.openFileBtn     = document.getElementById("open-file-btn");
+        this.reloadFileBtn   = document.getElementById("reload-file-btn");
+        this.fileInput       = document.getElementById("file-input");
+        this.dropZone        = document.getElementById("editor-dropzone");
+        this.dropOverlay     = document.getElementById("drop-overlay");
+        this.importedBadge   = document.getElementById("imported-file-badge");
+        this.importedFilename= document.getElementById("imported-filename");
+        this.removeFileBtn   = document.getElementById("remove-file-btn");
+        this.editorContainer = document.getElementById("monaco-editor-container");
+        this.importedFile    = null;
+        this._debounceTimeout= null;
     }
 
     init() {
         this.populateDropdowns();
         this.setupFileInput();
         this.setupDragAndDrop();
+        this.updateReloadButtonVisibility();
+
+        // Monaco may already be ready, or may still be loading.
+        if (window.Editor && window.Editor.manager && window.Editor.manager.isReady()) {
+            this._onMonacoReady();
+        } else {
+            window.addEventListener("monaco-ready", () => this._onMonacoReady(), { once: true });
+        }
+    }
+
+    /**
+     * Called once Monaco is initialized. Binds all events that depend on the editor.
+     */
+    _onMonacoReady() {
         this.bindEvents();
         this.updateMetrics();
-        this.updateReloadButtonVisibility();
+
+        // Subscribe to Monaco content changes for metrics update.
+        const editor = window.Editor.manager.getEditor();
+        if (editor) {
+            editor.onDidChangeModelContent(() => this.debouncedUpdateMetrics(150));
+        }
+    }
     }
 
     populateDropdowns() {
@@ -67,34 +101,29 @@ class EditorController {
 
     setupFileInput() {
         if (this.fileInput && window.InputValidator && window.InputValidator.getAcceptAttribute) {
-            // Set accept attribute generated from centralized language configuration
             this.fileInput.accept = window.InputValidator.getAcceptAttribute();
         }
     }
 
     bindEvents() {
-        if (this.codeInput) {
-            // Debounced input handler (150ms) to prevent input lag
-            this.codeInput.addEventListener("input", () => this.debouncedUpdateMetrics(150));
-
-            // Drag and Drop support
-            this.codeInput.addEventListener("dragover", (e) => {
+        // Drag and drop on the Monaco container (not on the editor's internal DOM)
+        if (this.editorContainer) {
+            this.editorContainer.addEventListener("dragover", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                this.codeInput.classList.add("border-primary-500", "bg-surface-900");
+                this.editorContainer.classList.add("drag-over");
             });
 
-            this.codeInput.addEventListener("dragleave", (e) => {
+            this.editorContainer.addEventListener("dragleave", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                this.codeInput.classList.remove("border-primary-500", "bg-surface-900");
+                this.editorContainer.classList.remove("drag-over");
             });
 
-            this.codeInput.addEventListener("drop", (e) => {
+            this.editorContainer.addEventListener("drop", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                this.codeInput.classList.remove("border-primary-500", "bg-surface-900");
-
+                this.editorContainer.classList.remove("drag-over");
                 if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                     this.handleFileImport(e.dataTransfer.files[0]);
                 }
@@ -102,10 +131,7 @@ class EditorController {
         }
 
         if (this.openFileBtn && this.fileInput) {
-            this.openFileBtn.addEventListener("click", () => {
-                this.fileInput.click();
-            });
-
+            this.openFileBtn.addEventListener("click", () => this.fileInput.click());
             this.fileInput.addEventListener("change", () => {
                 if (this.fileInput.files && this.fileInput.files.length > 0) {
                     this.handleFileImport(this.fileInput.files[0]);
@@ -132,6 +158,13 @@ class EditorController {
         if (this.languageSelect) {
             this.languageSelect.addEventListener("change", () => {
                 const selectedLang = this.languageSelect.value;
+
+                // Update Monaco language mode.
+                if (window.Editor && window.Editor.manager) {
+                    window.Editor.manager.setLanguage(selectedLang);
+                }
+
+                // Update global app state.
                 if (window.appState) {
                     window.appState.editor.language = selectedLang;
                 }
@@ -243,7 +276,6 @@ class EditorController {
     handleFileImport(file) {
         if (!file) return;
 
-        // 1. Pre-flight file validation using centralized validator
         const validation = window.InputValidator.validateImportedFile(file);
         if (!validation.isValid) {
             if (this.fileInput) this.fileInput.value = "";
@@ -253,16 +285,16 @@ class EditorController {
             return;
         }
 
-        // 2. Read file using FileReader
         const reader = new FileReader();
 
         reader.onload = (e) => {
             const content = e.target.result;
-            if (this.codeInput) {
-                this.codeInput.value = content;
+
+            if (window.Editor && window.Editor.manager) {
+                window.Editor.manager.setValue(content);
                 this.updateMetrics();
 
-                // 3. Automatic language detection
+                // Auto-detect language and update Monaco + selector.
                 const detectedLang = validation.detectedLanguage;
                 if (detectedLang && this.languageSelect) {
                     const hasOption = Array.from(this.languageSelect.options).some(
@@ -270,23 +302,21 @@ class EditorController {
                     );
                     if (hasOption) {
                         this.languageSelect.value = detectedLang;
+                        window.Editor.manager.setLanguage(detectedLang);
                         if (window.appState) {
                             window.appState.editor.language = detectedLang;
                         }
                     }
                 }
 
-                // 4. Update imported file badge UI
                 this.importedFile = file.name;
-                if (this.importedFilename) {
-                    this.importedFilename.textContent = file.name;
-                }
+                if (this.importedFilename) this.importedFilename.textContent = file.name;
                 if (this.importedBadge) {
                     this.importedBadge.classList.remove("hidden");
                     this.importedBadge.classList.add("flex");
                 }
 
-                // 5. Store in localStorage for Reload Last File (Phase 14)
+                // 5. Store in localStorage for Reload Last File
                 try {
                     localStorage.setItem("regen_last_file_name", file.name);
                     localStorage.setItem("regen_last_file_content", content);
@@ -303,7 +333,6 @@ class EditorController {
                 }
             }
 
-            // Reset input so re-opening same file triggers change event
             if (this.fileInput) this.fileInput.value = "";
         };
 
@@ -323,9 +352,7 @@ class EditorController {
             this.importedBadge.classList.remove("flex");
             this.importedBadge.classList.add("hidden");
         }
-        if (this.importedFilename) {
-            this.importedFilename.textContent = "";
-        }
+        if (this.importedFilename) this.importedFilename.textContent = "";
     }
 
     debouncedUpdateMetrics(delayMs = 150) {
@@ -334,14 +361,17 @@ class EditorController {
     }
 
     updateMetrics() {
-        const code = this.codeInput ? this.codeInput.value : "";
+        // Read from Monaco instead of textarea.value.
+        const code = (window.Editor && window.Editor.manager)
+            ? window.Editor.manager.getValue()
+            : "";
+
         const charCount = code.length;
         const lineCount = code ? code.split("\n").length : 0;
 
         if (this.charCounter) {
             this.charCounter.textContent = `${charCount.toLocaleString()} chars`;
         }
-
         if (this.lineCounter) {
             this.lineCounter.textContent = `${lineCount.toLocaleString()} lines`;
         }
@@ -373,8 +403,8 @@ class EditorController {
             return;
         }
 
-        if (this.codeInput) {
-            this.codeInput.value = sample;
+        if (window.Editor && window.Editor.manager) {
+            window.Editor.manager.setValue(sample);
             this.updateMetrics();
 
             // Resolve friendly display name for notification
@@ -392,23 +422,40 @@ class EditorController {
 
     clearEditor() {
         this.removeImportedFile();
-        if (this.codeInput) {
-            this.codeInput.value = "";
+        if (window.Editor && window.Editor.manager) {
+            window.Editor.manager.setValue("");
             this.updateMetrics();
+
+            // Also clear any diagnostics from the previous review.
+            if (window.Editor.diagnostics) {
+                window.Editor.diagnostics.clearDiagnostics();
+            }
+            if (window.ReviewState) {
+                window.ReviewState.clear();
+            }
+
             if (window.notifications) {
                 window.notifications.info("Editor cleared.");
             }
         }
     }
 
+    /**
+     * Returns editor data for API submission.
+     * Signature unchanged — ReviewController and RewriteController use this.
+     *
+     * @returns {{ language: string, reviewFocus: string, code: string, importedFile: string|null }}
+     */
     getEditorData() {
         const consoleCtrl = this.consoleController || window.consoleController;
         const executionData = consoleCtrl ? consoleCtrl.getExecutionData() : null;
 
         return {
-            language: this.languageSelect ? this.languageSelect.value : "",
-            reviewFocus: this.focusSelect ? this.focusSelect.value : "",
-            code: this.codeInput ? this.codeInput.value : "",
+            language:    this.languageSelect ? this.languageSelect.value : "",
+            reviewFocus: this.focusSelect    ? this.focusSelect.value    : "",
+            code: (window.Editor && window.Editor.manager)
+                ? window.Editor.manager.getValue()
+                : "",
             importedFile: this.importedFile,
             execution: executionData,
         };
