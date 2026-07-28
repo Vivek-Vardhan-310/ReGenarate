@@ -418,7 +418,13 @@
     <script src="js/validator.js"></script>
 
     <!-- Review data store — must load before editor and renderer -->
-    <script src="js/review/reviewState.js"></script>
+    <script src="js/review/reviewState.js?v=2"></script>
+
+    <!-- Event Bus — must load before any module that emits/listens -->
+    <script src="js/review/eventBus.js"></script>
+
+    <!-- Fingerprint engine — must load before liveSync -->
+    <script src="js/review/fingerprint.js"></script>
 
     <!-- Monaco instance manager — must load before diagnostics & navigation -->
     <script src="js/editor/monaco.js"></script>
@@ -435,8 +441,11 @@
     <!-- Issue findings cards (depends on ReviewState + window.Editor.navigation) -->
     <script src="js/review/findings.js"></script>
 
-    <!-- Quick Fix actions (depends on API, ReviewState, Editor.manager) -->
+    <!-- Quick Fix actions (depends on API, ReviewState, Editor.manager, ReviewEvents) -->
     <script src="js/review/quickFix.js"></script>
+
+    <!-- Live Sync — must load after Findings, SeverityCards, Editor.diagnostics, ReviewEvents -->
+    <script src="js/review/liveSync.js"></script>
 
     <!-- Notifications (no Monaco dependency) -->
     <script src="js/notifications.js"></script>
