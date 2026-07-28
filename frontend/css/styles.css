@@ -675,22 +675,82 @@ body {
     justify-content: flex-end;
 }
 
-/* Apply Fix — disabled placeholder for future implementation */
-.btn-apply-fix {
+.btn-explain {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     font-size: 0.7rem;
     font-weight: 600;
-    color: #475569;
-    background: #1e293b;
+    color: #94a3b8;
+    background: transparent;
     border: 1px solid #334155;
     border-radius: 0.35rem;
     padding: 0.3rem 0.65rem;
-    cursor: not-allowed;
-    opacity: 0.5;
-    transition: opacity 0.15s ease;
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-/* When Apply Fix is enabled (future): .btn-apply-fix:not(:disabled) { ... } */
+.btn-explain:hover {
+    color: #f8fafc;
+    background: #1e293b;
+    border-color: #475569;
+}
+
+.btn-quick-fix {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #f8fafc;
+    background: linear-gradient(to right, #0ea5e9, #0284c7);
+    border: none;
+    border-radius: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.btn-quick-fix:hover {
+    opacity: 0.9;
+}
+
+.btn-quick-fix:active {
+    transform: scale(0.95);
+}
+
+.btn-quick-fix:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==========================================
+   Quick Fix Diff Styles
+   ========================================== */
+
+.diff-old {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    text-decoration: line-through;
+    text-decoration-color: rgba(248, 113, 113, 0.5);
+    display: block;
+    padding: 0.1rem 0.5rem;
+    border-left: 2px solid #ef4444;
+}
+
+.diff-new {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #86efac;
+    display: block;
+    padding: 0.1rem 0.5rem;
+    border-left: 2px solid #22c55e;
+}
+
+.diff-context {
+    display: block;
+    padding: 0.1rem 0.5rem;
+    color: #94a3b8;
+    border-left: 2px solid transparent;
+}
 

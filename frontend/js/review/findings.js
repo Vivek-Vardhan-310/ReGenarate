@@ -83,13 +83,18 @@ const Findings = (() => {
                 ${snippetHtml}
                 <div class="issue-fix-actions">
                     <button type="button"
-                        class="btn-apply-fix"
+                        class="btn-explain"
                         data-issue-id="${issue.id}"
-                        disabled
-                        title="Apply Fix — coming soon"
-                        aria-label="Apply Fix (not yet available)"
+                        title="Explain this fix"
                     >
-                        ✔ Apply Fix
+                        💬 Explain
+                    </button>
+                    <button type="button"
+                        class="btn-quick-fix"
+                        data-issue-id="${issue.id}"
+                        title="Generate and preview Quick Fix"
+                    >
+                        ⚡ Quick Fix
                     </button>
                 </div>
             </div>
@@ -236,6 +241,27 @@ const Findings = (() => {
                     btn.setAttribute("aria-expanded", "true");
                     btn.querySelector(".show-fix-chevron").textContent = "▲";
                     btn.innerHTML = btn.innerHTML.replace("Show Fix", "Hide Fix");
+                }
+            });
+        });
+
+        // Quick Fix Action Buttons
+        _container.querySelectorAll(".btn-explain").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.issueId, 10);
+                if (window.ReviewActions && window.ReviewActions.explain) {
+                    window.ReviewActions.explain(id);
+                }
+            });
+        });
+
+        _container.querySelectorAll(".btn-quick-fix").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.issueId, 10);
+                if (window.ReviewActions && window.ReviewActions.quickFix) {
+                    window.ReviewActions.quickFix(id);
                 }
             });
         });

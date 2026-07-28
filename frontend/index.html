@@ -214,6 +214,39 @@
             </div>
         </section>
 
+        <!-- Quick Fix Preview Section (Hidden until requested) -->
+        <section id="quick-fix-preview-section" class="hidden bg-surface-900 rounded-2xl border border-primary-500/50 p-6 shadow-2xl shadow-primary-500/10 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">⚡</span>
+                    <h3 class="text-lg font-bold text-white">Quick Fix Preview</h3>
+                </div>
+                <div id="quick-fix-issue-title" class="text-sm font-semibold text-primary-400">
+                    <!-- Issue Title injected here -->
+                </div>
+            </div>
+            
+            <div id="quick-fix-explanation" class="text-sm text-surface-200">
+                <!-- Explanation injected here -->
+            </div>
+
+            <div id="quick-fix-diff-container" class="bg-surface-950 rounded-xl overflow-hidden border border-surface-800 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                <!-- Diff injected here -->
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" id="quick-fix-cancel-btn" class="px-4 py-2 bg-surface-800 hover:bg-surface-700 text-white font-semibold text-sm rounded-xl border border-surface-700 transition-colors">
+                    Cancel
+                </button>
+                <button type="button" id="quick-fix-retry-btn" class="hidden px-4 py-2 bg-surface-800 hover:bg-surface-700 text-white font-semibold text-sm rounded-xl border border-surface-700 transition-colors">
+                    Retry
+                </button>
+                <button type="button" id="quick-fix-apply-btn" class="px-6 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center space-x-2">
+                    <span>✔ Apply Fix</span>
+                </button>
+            </div>
+        </section>
+
         <!-- Review Results Section (Hidden until result) -->
         <section id="review-section" class="hidden bg-surface-900 rounded-2xl border border-surface-800 p-6 shadow-2xl space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-800 pb-3">
@@ -315,6 +348,9 @@
 
     <!-- Issue findings cards (depends on ReviewState + window.Editor.navigation) -->
     <script src="js/review/findings.js"></script>
+
+    <!-- Quick Fix actions (depends on API, ReviewState, Editor.manager) -->
+    <script src="js/review/quickFix.js"></script>
 
     <!-- Notifications (no Monaco dependency) -->
     <script src="js/notifications.js"></script>

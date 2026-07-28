@@ -45,6 +45,14 @@ class PromptBuilder:
         "If you cannot determine the exact location confidently, return null instead of guessing."
     )
 
+    QUICK_FIX_SYSTEM_PROMPT = (
+        "You are an expert software engineer whose only responsibility is to safely fix ONE selected issue.\n"
+        "Analyze the provided source code and the selected issue, then return a valid JSON object ONLY.\n"
+        "Do NOT include any text outside the JSON object.\n"
+        "Do NOT wrap the JSON in markdown code fences (``` or ```json).\n"
+        "Your entire response must be parseable by json.loads() with no preprocessing."
+    )
+
     REVIEW_PROMPT_TEMPLATE = (
         "Review the following {{language}} source code with focus on: {{review_focus}}.\n\n"
         "Analyze for: correctness, security vulnerabilities, performance issues, "
@@ -98,6 +106,43 @@ class PromptBuilder:
         "Code:\n```{{language}}\n{{code}}\n```"
     )
 
+    QUICK_FIX_PROMPT_TEMPLATE = (
+        "Task: Fix the selected issue in the following {{language}} source code.\n\n"
+        "Issue Details:\n"
+        "- Title: {{issue_title}}\n"
+        "- Description: {{issue_description}}\n"
+        "- Severity: {{issue_severity}}\n"
+        "- Suggestion: {{issue_suggestion}}\n"
+        "- Fix Snippet: {{issue_fixSnippet}}\n"
+        "- Fix Type: {{issue_fixType}}\n"
+        "- Target Line: {{issue_line}}\n"
+        "- Target End Line: {{issue_endLine}}\n\n"
+        "Rules:\n"
+        "- Fix ONLY the selected issue.\n"
+        "- Do NOT rewrite unrelated code.\n"
+        "- Do NOT optimize, refactor, or modernize syntax outside the issue.\n"
+        "- Do NOT improve readability, rename variables/methods, or reorder imports/methods.\n"
+        "- Preserve formatting, comments, indentation, naming, coding style, and project structure.\n"
+        "- Preserve line numbers and blank lines whenever possible.\n"
+        "- Avoid moving code.\n"
+        "- Choose the smallest safe modification.\n"
+        "- If the issue cannot be fixed safely without changing unrelated code, return the original code and explain why in the 'explanation' field.\n\n"
+        "Respond with ONLY a valid JSON object matching this exact schema:\n"
+        "{\n"
+        '  "fixedCode": "<the completely patched source code>",\n'
+        '  "explanation": "<what changed and why>",\n'
+        '  "changedLines": [\n'
+        "    {\n"
+        '      "line": <number>,\n'
+        '      "endLine": <number or null>,\n'
+        '      "old": "<original code content>",\n'
+        '      "new": "<new replaced code content>"\n'
+        "    }\n"
+        "  ]\n"
+        "}\n\n"
+        "Code ({{language}}):\n```{{language}}\n{{code}}\n```"
+    )
+
     @classmethod
     def get_system_prompt(cls) -> str:
         """Returns the centralized system prompt (used by rewrite)."""
@@ -107,6 +152,11 @@ class PromptBuilder:
     def get_review_system_prompt(cls) -> str:
         """Returns the review-specific system prompt (strict JSON output)."""
         return cls.REVIEW_SYSTEM_PROMPT
+
+    @classmethod
+    def get_quick_fix_system_prompt(cls) -> str:
+        """Returns the quick-fix-specific system prompt (strict JSON output)."""
+        return cls.QUICK_FIX_SYSTEM_PROMPT
 
     @classmethod
     def preprocess_code(cls, code: str) -> str:
@@ -129,4 +179,19 @@ class PromptBuilder:
         """Constructs token-optimized user prompt for code rewrite."""
         prompt = cls.REWRITE_PROMPT_TEMPLATE.replace("{{language}}", language)
         prompt = prompt.replace("{{code}}", code)
+        return prompt
+
+    @classmethod
+    def build_quick_fix_prompt(cls, language: str, code: str, issue: dict) -> str:
+        """Constructs token-optimized user prompt for quick fix."""
+        prompt = cls.QUICK_FIX_PROMPT_TEMPLATE.replace("{{language}}", language)
+        prompt = prompt.replace("{{code}}", code)
+        prompt = prompt.replace("{{issue_title}}", str(issue.get("title", "")))
+        prompt = prompt.replace("{{issue_description}}", str(issue.get("description", "")))
+        prompt = prompt.replace("{{issue_severity}}", str(issue.get("severity", "")))
+        prompt = prompt.replace("{{issue_suggestion}}", str(issue.get("suggestion", "")))
+        prompt = prompt.replace("{{issue_fixSnippet}}", str(issue.get("fixSnippet", "")))
+        prompt = prompt.replace("{{issue_fixType}}", str(issue.get("fixType", "")))
+        prompt = prompt.replace("{{issue_line}}", str(issue.get("line", "")))
+        prompt = prompt.replace("{{issue_endLine}}", str(issue.get("endLine", "")))
         return prompt
