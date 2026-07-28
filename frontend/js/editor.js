@@ -10,14 +10,9 @@
 
 "use strict";
 
-const SAMPLE_CODE = {
-    python: `def calculate_total(items):\n    # Calculate total price with tax\n    total = 0\n    for item in items:\n        if item['price'] > 0:\n            total += item['price'] * 1.18\n    return round(total, 2)\n\n# Example usage\nproducts = [{'name': 'Book', 'price': 25.0}, {'name': 'Pen', 'price': 5.0}]\nprint("Total:", calculate_total(products))`,
-    javascript: `function processOrders(orders) {\n  let result = [];\n  for (let i = 0; i < orders.length; i++) {\n    if (orders[i].status === 'pending') {\n      result.push({\n        id: orders[i].id,\n        total: orders[i].amount * 1.1\n      });\n    }\n  }\n  return result;\n}`,
-    java: `public class CustomerService {\n    public double calculateDiscount(double price, int customerYears) {\n        if (customerYears > 5) {\n            return price * 0.85;\n        } else if (customerYears > 2) {\n            return price * 0.92;\n        }\n        return price;\n    }\n}`,
-};
-
 class EditorController {
-    constructor() {
+    constructor(consoleController = null) {
+        this.consoleController = consoleController;
         this.languageSelect = document.getElementById("language-select");
         this.focusSelect = document.getElementById("focus-select");
         this.codeInput = document.getElementById("code-input");
@@ -26,7 +21,10 @@ class EditorController {
         this.sampleBtn = document.getElementById("load-sample-btn");
         this.clearBtn = document.getElementById("clear-editor-btn");
         this.openFileBtn = document.getElementById("open-file-btn");
+        this.reloadFileBtn = document.getElementById("reload-file-btn");
         this.fileInput = document.getElementById("file-input");
+        this.dropZone = document.getElementById("editor-dropzone");
+        this.dropOverlay = document.getElementById("drop-overlay");
         this.importedBadge = document.getElementById("imported-file-badge");
         this.importedFilename = document.getElementById("imported-filename");
         this.removeFileBtn = document.getElementById("remove-file-btn");
@@ -37,8 +35,10 @@ class EditorController {
     init() {
         this.populateDropdowns();
         this.setupFileInput();
+        this.setupDragAndDrop();
         this.bindEvents();
         this.updateMetrics();
+        this.updateReloadButtonVisibility();
     }
 
     populateDropdowns() {
@@ -125,6 +125,10 @@ class EditorController {
             this.clearBtn.addEventListener("click", () => this.clearEditor());
         }
 
+        if (this.reloadFileBtn) {
+            this.reloadFileBtn.addEventListener("click", () => this.reloadLastFile());
+        }
+
         if (this.languageSelect) {
             this.languageSelect.addEventListener("change", () => {
                 const selectedLang = this.languageSelect.value;
@@ -132,6 +136,107 @@ class EditorController {
                     window.appState.editor.language = selectedLang;
                 }
             });
+        }
+    }
+
+    setupDragAndDrop() {
+        if (!this.dropZone) return;
+
+        const showOverlay = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.dropOverlay) {
+                this.dropOverlay.classList.remove("hidden");
+                this.dropOverlay.classList.add("flex");
+            }
+        };
+
+        const hideOverlay = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.dropOverlay) {
+                this.dropOverlay.classList.add("hidden");
+                this.dropOverlay.classList.remove("flex");
+            }
+        };
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+            this.dropZone.addEventListener(eventName, showOverlay, false);
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+            this.dropZone.addEventListener(eventName, hideOverlay, false);
+        });
+
+        this.dropZone.addEventListener("drop", (e) => {
+            const dt = e.dataTransfer;
+            const files = dt ? dt.files : null;
+            if (files && files.length > 0) {
+                this.handleFileImport(files[0]);
+            }
+        });
+    }
+
+    updateReloadButtonVisibility() {
+        try {
+            const lastFileName = localStorage.getItem("regen_last_file_name");
+            if (this.reloadFileBtn) {
+                if (lastFileName) {
+                    this.reloadFileBtn.classList.remove("hidden");
+                    this.reloadFileBtn.classList.add("flex");
+                    this.reloadFileBtn.title = `Reload last imported file: ${lastFileName}`;
+                } else {
+                    this.reloadFileBtn.classList.add("hidden");
+                    this.reloadFileBtn.classList.remove("flex");
+                }
+            }
+        } catch (e) {
+            console.warn("localStorage unavailable for reload button update:", e);
+        }
+    }
+
+    reloadLastFile() {
+        try {
+            const lastFileName = localStorage.getItem("regen_last_file_name");
+            const lastFileContent = localStorage.getItem("regen_last_file_content");
+            const lastFileLang = localStorage.getItem("regen_last_file_lang");
+
+            if (!lastFileName || !lastFileContent) {
+                if (window.notifications) {
+                    window.notifications.warning("No recent imported file found to reload.");
+                }
+                return;
+            }
+
+            if (this.codeInput) {
+                this.codeInput.value = lastFileContent;
+                this.updateMetrics();
+            }
+
+            if (lastFileLang && this.languageSelect) {
+                this.languageSelect.value = lastFileLang;
+                if (window.appState) {
+                    window.appState.editor.language = lastFileLang;
+                }
+            }
+
+            this.importedFile = lastFileName;
+            if (this.importedFilename) {
+                this.importedFilename.textContent = lastFileName;
+            }
+            if (this.importedBadge) {
+                this.importedBadge.classList.remove("hidden");
+                this.importedBadge.classList.add("flex");
+            }
+
+            if (window.notifications) {
+                window.notifications.success(`Reloaded last imported file: '${lastFileName}'`);
+            }
+        } catch (e) {
+            console.error("Failed to reload last file:", e);
+            if (window.notifications) {
+                window.notifications.error("Failed to reload last file.");
+            }
         }
     }
 
@@ -181,7 +286,17 @@ class EditorController {
                     this.importedBadge.classList.add("flex");
                 }
 
-                // 5. Notify user of successful import
+                // 5. Store in localStorage for Reload Last File (Phase 14)
+                try {
+                    localStorage.setItem("regen_last_file_name", file.name);
+                    localStorage.setItem("regen_last_file_content", content);
+                    localStorage.setItem("regen_last_file_lang", detectedLang || "");
+                    this.updateReloadButtonVisibility();
+                } catch (err) {
+                    console.warn("Unable to save recent file to localStorage:", err);
+                }
+
+                // 6. Notify user of successful import
                 if (window.notifications) {
                     const langLabel = detectedLang ? detectedLang.toUpperCase() : "File";
                     window.notifications.success(`Imported '${file.name}' (Auto-detected ${langLabel})`);
@@ -238,14 +353,39 @@ class EditorController {
 
     loadSampleCode() {
         this.removeImportedFile();
-        const currentLang = this.languageSelect ? this.languageSelect.value : "python";
-        const sample = SAMPLE_CODE[currentLang] || SAMPLE_CODE.python;
+        const currentLang = this.languageSelect ? this.languageSelect.value : "";
+        
+        if (!currentLang) {
+            if (window.notifications) {
+                window.notifications.warning("Please select a programming language first.");
+            }
+            return;
+        }
+
+        const sample = typeof window.getSampleProgram === "function"
+            ? window.getSampleProgram(currentLang)
+            : (window.samplePrograms ? window.samplePrograms[currentLang] : null);
+
+        if (!sample) {
+            if (window.notifications) {
+                window.notifications.warning("No sample program is available for this language.");
+            }
+            return;
+        }
 
         if (this.codeInput) {
             this.codeInput.value = sample;
             this.updateMetrics();
+
+            // Resolve friendly display name for notification
+            let langDisplayName = currentLang.toUpperCase();
+            if (window.SUPPORTED_LANGUAGES_LIST) {
+                const found = window.SUPPORTED_LANGUAGES_LIST.find((l) => l.id === currentLang);
+                if (found) langDisplayName = found.name;
+            }
+
             if (window.notifications) {
-                window.notifications.info(`Loaded sample ${currentLang.toUpperCase()} code.`);
+                window.notifications.info(`Loaded ${langDisplayName} sample code.`);
             }
         }
     }
@@ -262,11 +402,15 @@ class EditorController {
     }
 
     getEditorData() {
+        const consoleCtrl = this.consoleController || window.consoleController;
+        const executionData = consoleCtrl ? consoleCtrl.getExecutionData() : null;
+
         return {
             language: this.languageSelect ? this.languageSelect.value : "",
             reviewFocus: this.focusSelect ? this.focusSelect.value : "",
             code: this.codeInput ? this.codeInput.value : "",
             importedFile: this.importedFile,
+            execution: executionData,
         };
     }
 }

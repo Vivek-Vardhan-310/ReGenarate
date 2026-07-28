@@ -46,19 +46,24 @@ window.appState = {
 async function initializeApp() {
     console.info(`[${APP_CONFIG.appName}] v${APP_CONFIG.version} — Initializing...`);
 
-    // 1. Initialize Editor Controller
-    const editorController = new window.EditorController();
+    // 1. Initialize Console Controller (Phase 11)
+    const consoleController = new window.ConsoleController();
+    consoleController.init();
+    window.consoleController = consoleController;
+
+    // 2. Initialize Editor Controller
+    const editorController = new window.EditorController(consoleController);
     editorController.init();
 
-    // 2. Initialize Review Controller
+    // 3. Initialize Review Controller
     const reviewController = new window.ReviewController(editorController);
     reviewController.init();
 
-    // 3. Initialize Rewrite Controller
+    // 4. Initialize Rewrite Controller
     const rewriteController = new window.RewriteController(editorController);
     rewriteController.init();
 
-    // 4. Verify Backend Health asynchronously
+    // 5. Verify Backend Health asynchronously
     checkBackendHealth();
 
     console.info(`[${APP_CONFIG.appName}] Application initialized successfully.`);

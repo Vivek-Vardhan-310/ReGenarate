@@ -50,6 +50,7 @@ class ReviewService:
             "language": request.language,
             "focus": request.review_focus,
             "code": request.code,
+            "execution": request.execution.model_dump() if request.execution else None,
         }
         cache_key = review_cache.generate_key("review", cache_payload)
         cached_result = review_cache.get(cache_key)
@@ -62,9 +63,11 @@ class ReviewService:
                 message="Review served from cache.",
             )
 
+        exec_status = request.execution.status if request.execution else "not_executed"
         logger.info(
             f"Processing review request | Language: {request.language} | "
-            f"Focus: {request.review_focus} | Code length: {len(request.code)} chars"
+            f"Focus: {request.review_focus} | Execution: {exec_status} | "
+            f"Code length: {len(request.code)} chars"
         )
         logger.debug(f"Code snippet: {truncate_string(request.code, 60)}")
 
@@ -74,25 +77,44 @@ class ReviewService:
             language=request.language,
             review_focus=request.review_focus,
             code=request.code,
+            execution=request.execution,
         )
 
         # 3. Check configuration mode
         if not self.groq_client.is_configured():
             logger.warning("GROQ_API_KEY is missing. Returning mock review response for demonstration.")
-            mock_markdown = (
-                f"# Summary\n\n"
-                f"Your **{request.language.title()}** implementation was reviewed focusing on **{request.review_focus.title()}**.\n\n"
-                f"# Strengths\n\n"
-                f"- Clean function signature and clear logical intent.\n"
-                f"- Input code processed successfully through the backend pipeline.\n\n"
-                f"# Issues\n\n"
-                f"- `[Config]` `GROQ_API_KEY` is not set in `.env`. Configure a valid key for live LLM inference.\n\n"
-                f"# Recommendations\n\n"
-                f"1. Set `GROQ_API_KEY=your_key` in `backend/.env`.\n"
-                f"2. Ensure input variables are properly typed.\n\n"
-                f"# Example Improvements\n\n"
-                f"```python\n# Configure GROQ_API_KEY to test live Llama 3.3 output\n```"
-            )
+            if request.execution and (request.execution.status == "failed" or request.execution.exit_code != 0 or request.execution.stderr):
+                mock_markdown = (
+                    f"# Summary\n\n"
+                    f"Execution failed with exit code `{request.execution.exit_code}`.\n\n"
+                    f"# Detected Runtime Issues\n\n"
+                    f"**Stderr trace:**\n```\n{request.execution.stderr or 'Runtime error detected'}\n```\n\n"
+                    f"# Probable Cause\n\n"
+                    f"Runtime exception or unhandled condition during program execution. Confidence: **High**.\n\n"
+                    f"# Suggested Fix\n\n"
+                    f"1. Add exception handling or boundary checks.\n"
+                    f"2. Verify inputs before execution.\n\n"
+                    f"# Improved Code\n\n"
+                    f"```{request.language}\n# Configure GROQ_API_KEY for live AI debugging\n```\n\n"
+                    f"# Additional Recommendations\n\n"
+                    f"- Set GROQ_API_KEY in backend/.env for live LLM debugging."
+                )
+            else:
+                mock_markdown = (
+                    f"# Summary\n\n"
+                    f"Your **{request.language.title()}** implementation was reviewed focusing on **{request.review_focus.title()}**.\n\n"
+                    f"# Strengths\n\n"
+                    f"- Clean function signature and clear logical intent.\n"
+                    f"- Input code processed successfully through the backend pipeline.\n\n"
+                    f"# Issues\n\n"
+                    f"- `[Config]` `GROQ_API_KEY` is not set in `.env`. Configure a valid key for live LLM inference.\n\n"
+                    f"# Recommendations\n\n"
+                    f"1. Set `GROQ_API_KEY=your_key` in `backend/.env`.\n"
+                    f"2. Ensure input variables are properly typed.\n\n"
+                    f"# Example Improvements\n\n"
+                    f"```{request.language}\n# Configure GROQ_API_KEY to test live Llama 3.3 output\n```"
+                )
+
             review_payload = ReviewData(review=mock_markdown).model_dump()
             review_cache.set(cache_key, review_payload)
 

@@ -38,12 +38,17 @@ class ReviewController {
         window.Renderer.setLoading(true, "Analyzing source code with AI...");
 
         try {
-            // 3. API Submission
-            const response = await window.apiClient.submitReview({
+            // 3. API Submission (Includes optional Version 2 execution data)
+            const payload = {
                 language: inputData.language,
                 review_focus: inputData.reviewFocus,
                 code: inputData.code,
-            });
+            };
+            if (inputData.execution) {
+                payload.execution = inputData.execution;
+            }
+
+            const response = await window.apiClient.submitReview(payload);
 
             // 4. Render Result
             if (response.success && response.data) {
