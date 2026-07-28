@@ -63,6 +63,14 @@ class ExecutionData(BaseModel):
         description="Execution time in milliseconds.",
         examples=[42],
     )
+    compiler_errors: Optional[str] = Field(
+        default="",
+        description="Compilation error output if applicable.",
+    )
+    runtime_errors: Optional[str] = Field(
+        default="",
+        description="Runtime error output if applicable.",
+    )
 
 
 class ReviewRequest(BaseModel):
@@ -272,3 +280,61 @@ class QuickFixRequest(BaseModel):
                 f"{MAX_CODE_LENGTH:,} characters."
             )
         return value
+
+
+class RunCodeRequest(BaseModel):
+    """
+    Request model for POST /api/v1/run (JDoodle Code Execution).
+
+    Attributes:
+        language: Programming language identifier.
+        code: Source code string to execute.
+        stdin: Optional standard input passed to execution context.
+    """
+
+    language: str = Field(
+        ...,
+        description="Programming language of the source code.",
+        examples=["python", "java", "cpp"],
+    )
+    code: str = Field(
+        ...,
+        description="Source code string to execute.",
+        examples=["print('Hello, World!')"],
+    )
+    stdin: Optional[str] = Field(
+        default="",
+        description="Optional standard input string.",
+        examples=["5\n"],
+    )
+
+    @field_validator("language")
+    @classmethod
+    def validate_language_field(cls, value: str) -> str:
+        """Validates and normalizes the programming language."""
+        if not value or not value.strip():
+            raise ValueError("Programming language is required.")
+
+        normalized = normalize_language(value)
+        if normalized not in SUPPORTED_LANGUAGES:
+            supported_list = ", ".join(SUPPORTED_LANGUAGES)
+            raise ValueError(
+                f"Unsupported programming language '{value}'. "
+                f"Supported languages are: {supported_list}"
+            )
+        return normalized
+
+    @field_validator("code")
+    @classmethod
+    def validate_code_field(cls, value: str) -> str:
+        """Validates the source code content and length."""
+        if not value or not value.strip():
+            raise ValueError("Source code cannot be empty.")
+
+        if len(value) > MAX_CODE_LENGTH:
+            raise ValueError(
+                f"Source code exceeds the maximum allowed length of "
+                f"{MAX_CODE_LENGTH:,} characters."
+            )
+        return value
+

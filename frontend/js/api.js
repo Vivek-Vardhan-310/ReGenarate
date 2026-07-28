@@ -144,6 +144,18 @@ class ApiClient {
             body: payload,
         });
     }
+
+    /**
+     * Performs POST /run request (JDoodle Code Execution).
+     * @param {Object} payload - { language, code, stdin }
+     * @returns {Promise<Object>} Execution response payload.
+     */
+    async submitRunCode(payload) {
+        return this.request("/run", {
+            method: "POST",
+            body: payload,
+        });
+    }
 }
 
 // Global API Client Singleton

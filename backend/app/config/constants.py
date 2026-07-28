@@ -87,6 +87,31 @@ MAX_CODE_LENGTH = 50_000  # Maximum characters in submitted code
 MIN_CODE_LENGTH = 1       # Minimum characters (non-whitespace)
 
 # ==========================================
+# JDoodle Language Mapping & Versions
+# ==========================================
+# Maps simple language identifier sent by frontend to JDoodle language string and versionIndex
+
+JDOODLE_LANGUAGE_MAPPING: dict[str, dict[str, str]] = {
+    "python": {"language": "python3", "versionIndex": "4"},
+    "python3": {"language": "python3", "versionIndex": "4"},
+    "javascript": {"language": "nodejs", "versionIndex": "4"},
+    "nodejs": {"language": "nodejs", "versionIndex": "4"},
+    "typescript": {"language": "typescript", "versionIndex": "0"},
+    "java": {"language": "java", "versionIndex": "4"},
+    "c": {"language": "c", "versionIndex": "5"},
+    "cpp": {"language": "cpp17", "versionIndex": "1"},
+    "csharp": {"language": "csharp", "versionIndex": "4"},
+    "go": {"language": "go", "versionIndex": "4"},
+    "php": {"language": "php", "versionIndex": "4"},
+    "rust": {"language": "rust", "versionIndex": "4"},
+    "kotlin": {"language": "kotlin", "versionIndex": "3"},
+    "swift": {"language": "swift", "versionIndex": "4"},
+    "ruby": {"language": "ruby", "versionIndex": "4"},
+    "scala": {"language": "scala", "versionIndex": "4"},
+    "sql": {"language": "sql", "versionIndex": "3"},
+}
+
+# ==========================================
 # Error Codes
 # ==========================================
 # Structured error codes for consistent API responses
@@ -104,4 +129,6 @@ ERROR_CODES = {
     "CONFIGURATION_ERROR": "CONFIGURATION_ERROR",
     "INTERNAL_ERROR": "INTERNAL_ERROR",
     "NOT_IMPLEMENTED": "NOT_IMPLEMENTED",
+    "COMPILER_ERROR": "COMPILER_ERROR",
+    "EXECUTION_ERROR": "EXECUTION_ERROR",
 }

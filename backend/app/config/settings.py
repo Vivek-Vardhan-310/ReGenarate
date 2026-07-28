@@ -48,6 +48,14 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # ------------------------------------------
+    # JDoodle Execution Service Configuration
+    # ------------------------------------------
+    JDOODLE_CLIENT_ID: str = ""
+    JDOODLE_CLIENT_SECRET: str = ""
+    JDOODLE_API_URL: str = "https://api.jdoodle.com/v1/execute"
+    JDOODLE_TIMEOUT: int = 15
+
+    # ------------------------------------------
     # Application Settings
     # ------------------------------------------
     REQUEST_TIMEOUT: int = 30

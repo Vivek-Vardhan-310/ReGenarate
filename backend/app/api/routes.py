@@ -13,13 +13,14 @@ Per Architecture (docs/02-Architecture.md, Section 9 & 27):
 from fastapi import APIRouter, Depends, status
 
 from app.config.constants import API_PREFIX
-from app.schemas.requests import ReviewRequest, RewriteRequest, QuickFixRequest
-from app.schemas.responses import SuccessResponse
+from app.schemas.requests import ReviewRequest, RewriteRequest, QuickFixRequest, RunCodeRequest
+from app.schemas.responses import SuccessResponse, RunCodeData
 from app.services.review_service import ReviewService
 from app.services.rewrite_service import RewriteService
 from app.services.quick_fix_service import QuickFixService
+from app.services.jdoodle import JDoodleService
 
-router = APIRouter(prefix=API_PREFIX, tags=["AI Operations"])
+router = APIRouter(prefix=API_PREFIX, tags=["AI & Code Execution Operations"])
 
 
 # Dependency injection providers for services
@@ -36,6 +37,11 @@ def get_rewrite_service() -> RewriteService:
 def get_quick_fix_service() -> QuickFixService:
     """Dependency provider for QuickFixService instance."""
     return QuickFixService()
+
+
+def get_jdoodle_service() -> JDoodleService:
+    """Dependency provider for JDoodleService instance."""
+    return JDoodleService()
 
 
 @router.post(
@@ -108,3 +114,57 @@ async def quick_fix_code(
         SuccessResponse containing the structured QuickFixData.
     """
     return await service.generate_quick_fix(request)
+
+
+@router.post(
+    "/run",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Execute Code via JDoodle",
+    description="Executes source code using the JDoodle Compiler API and returns output and metrics.",
+)
+async def run_code(
+    request: RunCodeRequest,
+    service: JDoodleService = Depends(get_jdoodle_service),
+) -> SuccessResponse:
+    """
+    Endpoint to execute source code via JDoodle API.
+
+    Args:
+        request: Validated RunCodeRequest payload.
+        service: Injected JDoodleService instance.
+
+    Returns:
+        SuccessResponse containing RunCodeData payload.
+    """
+    result = await service.execute_code(
+        code=request.code,
+        language=request.language,
+        stdin=request.stdin or "",
+    )
+    is_success = result.get("execution_success", True)
+    msg = "Code executed successfully." if is_success else "Code execution completed with errors."
+    return SuccessResponse(
+        success=True,
+        data=result,
+        message=msg,
+    )
+
+
+@router.post(
+    "/execute",
+    response_model=SuccessResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Execute Code via JDoodle (Alias)",
+    description="Alias endpoint for /run to execute source code via JDoodle Compiler API.",
+    include_in_schema=False,
+)
+async def execute_code(
+    request: RunCodeRequest,
+    service: JDoodleService = Depends(get_jdoodle_service),
+) -> SuccessResponse:
+    """
+    Alias endpoint for POST /run.
+    """
+    return await run_code(request, service)
+

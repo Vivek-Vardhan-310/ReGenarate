@@ -219,6 +219,10 @@ class StructuredReviewData(BaseModel):
         default="",
         description="Full review as Markdown text (backward-compatibility field).",
     )
+    review: str = Field(
+        default="",
+        description="Full review as Markdown text (backward-compatibility alias).",
+    )
 
 
 class ReviewData(BaseModel):
@@ -291,3 +295,19 @@ class QuickFixData(BaseModel):
         default=None,
         description="The AI model used for the fix.",
     )
+
+
+class RunCodeData(BaseModel):
+    """
+    Response data payload for code execution via JDoodle.
+    """
+
+    output: str = Field(default="", description="Consolidated output text.")
+    stdout: str = Field(default="", description="Standard output string.")
+    compiler_errors: str = Field(default="", description="Compiler error messages if compilation failed.")
+    runtime_errors: str = Field(default="", description="Runtime error output or stack traces.")
+    memory: str = Field(default="0", description="Memory consumed during execution.")
+    cpu_time: str = Field(default="0", description="CPU execution duration in seconds.")
+    execution_success: bool = Field(default=True, description="Indicates whether execution completed successfully.")
+    status_code: int = Field(default=200, description="Execution status code.")
+

@@ -79,6 +79,10 @@ class ReviewController {
             if (response.success && response.data) {
                 let data = response.data;
 
+                if (data.execution && window.consoleController) {
+                    window.consoleController.setExecutionResult(data.execution);
+                }
+
                 // Defensive fallback: If data.issues is undefined but data.review contains a JSON string,
                 // try parsing it as structured JSON so the structured UI is displayed.
                 if (data.issues === undefined && typeof data.review === "string") {

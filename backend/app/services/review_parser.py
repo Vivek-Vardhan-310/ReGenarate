@@ -255,6 +255,7 @@ class ReviewParser:
             strengths       = strengths,
             recommendations = recommendations,
             markdown        = markdown_field,
+            review          = markdown_field,
         )
 
     @classmethod

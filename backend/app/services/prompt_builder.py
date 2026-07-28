@@ -60,8 +60,11 @@ class PromptBuilder:
         "Task: Review the following {{language}} source code and execution context.\n\n"
         "Programming Language:\n{{language}}\n\n"
         "Execution Status:\n{{execution_status}}\n\n"
+        "Execution Success:\n{{execution_success}}\n\n"
         "Exit Code:\n{{exit_code}}\n\n"
         "Standard Output:\n{{stdout}}\n\n"
+        "Compiler Errors:\n{{compiler_errors}}\n\n"
+        "Runtime Errors:\n{{runtime_errors}}\n\n"
         "Standard Error:\n{{stderr}}\n\n"
         "Review Focus:\n{{review_focus}}\n\n"
         "Instructions:\n"
@@ -70,7 +73,7 @@ class PromptBuilder:
         "- Distinguish between compile-time errors and runtime errors.\n"
         "- Correlate stack traces in standard error with source code locations and functions.\n"
         "- If execution data is unavailable (e.g. status is not_executed or execution results are absent), perform normal static analysis.\n\n"
-        "Analyze for: correctness, security vulnerabilities, performance issues, readability, maintainability, and best practices violations.\n\n"
+        "Analyze for: # Summary, # Strengths, # Issues, # Recommendations, correctness, security vulnerabilities, performance, and best practices.\n\n"
         "Respond with ONLY a valid JSON object matching this exact schema:\n"
         "{\n"
         '  "summary": "<overall assessment string>",\n'
@@ -192,20 +195,57 @@ class PromptBuilder:
     ) -> str:
         """Constructs token-optimized user prompt for code review."""
         numbered_code = cls.preprocess_code(code)
-        prompt = cls.REVIEW_PROMPT_TEMPLATE.replace("{{language}}", language)
-        prompt = prompt.replace("{{review_focus}}", review_focus)
-        prompt = prompt.replace("{{code}}", numbered_code)
 
-        if execution:
-            prompt = prompt.replace("{{execution_status}}", execution.status or "not_executed")
-            prompt = prompt.replace("{{exit_code}}", str(execution.exit_code if execution.exit_code is not None else 0))
-            prompt = prompt.replace("{{stdout}}", execution.stdout if execution.stdout else "(None)")
-            prompt = prompt.replace("{{stderr}}", execution.stderr if execution.stderr else "(None)")
+        is_failed = execution and (
+            (execution.status and execution.status.lower() in ("failed", "compilation_error", "runtime_error"))
+            or (execution.exit_code is not None and execution.exit_code != 0)
+            or bool(execution.stderr)
+        )
+
+        if is_failed:
+            err_output = execution.stderr or execution.stdout or "(None)"
+            prompt = (
+                f"Task: Provide execution-aware debugging assistance for {language}.\n\n"
+                f"Programming Language:\n{language}\n\n"
+                f"Execution Status:\n{execution.status or 'failed'}\n\n"
+                f"Execution Success:\nNo\n\n"
+                f"Exit Code:\n{execution.exit_code}\n\n"
+                f"Standard Output:\n{execution.stdout or '(None)'}\n\n"
+                f"Compiler Errors:\n{getattr(execution, 'compiler_errors', '') or '(None)'}\n\n"
+                f"Runtime Errors:\n{getattr(execution, 'runtime_errors', '') or err_output}\n\n"
+                f"Standard Error:\n{execution.stderr or '(None)'}\n\n"
+                f"Review Focus:\n{review_focus}\n\n"
+                f"Instructions:\n"
+                f"- Provide execution-aware debugging assistance.\n"
+                f"- Analyze: # Summary, # Detected Runtime Issues, # Probable Cause, # Suggested Fix, # Improved Code, # Strengths, # Issues.\n\n"
+                f"Code ({language}):\n```{language}\n{numbered_code}\n```"
+            )
         else:
-            prompt = prompt.replace("{{execution_status}}", "not_executed")
-            prompt = prompt.replace("{{exit_code}}", "0")
-            prompt = prompt.replace("{{stdout}}", "(None - Static Analysis)")
-            prompt = prompt.replace("{{stderr}}", "(None - Static Analysis)")
+            prompt = cls.REVIEW_PROMPT_TEMPLATE.replace("{{language}}", language)
+            prompt = prompt.replace("{{review_focus}}", review_focus)
+            prompt = prompt.replace("{{code}}", numbered_code)
+
+            if execution:
+                exec_status = execution.status or "success"
+                exec_success = "Yes" if exec_status == "success" else "No"
+                cmp_err = getattr(execution, "compiler_errors", "") or "(None)"
+                rt_err = getattr(execution, "runtime_errors", "") or (execution.stderr if execution.stderr else "(None)")
+                prompt = prompt.replace("{{execution_status}}", exec_status)
+                prompt = prompt.replace("{{execution_success}}", exec_success)
+                prompt = prompt.replace("{{exit_code}}", str(execution.exit_code if execution.exit_code is not None else 0))
+                prompt = prompt.replace("{{stdout}}", execution.stdout if execution.stdout else "(None)")
+                prompt = prompt.replace("{{compiler_errors}}", cmp_err)
+                prompt = prompt.replace("{{runtime_errors}}", rt_err)
+                prompt = prompt.replace("{{stderr}}", execution.stderr if execution.stderr else "(None)")
+            else:
+                prompt = prompt.replace("{{execution_status}}", "not_executed")
+                prompt = prompt.replace("{{execution_success}}", "Unknown")
+                prompt = prompt.replace("{{exit_code}}", "0")
+                prompt = prompt.replace("{{stdout}}", "(None - Static Analysis)")
+                prompt = prompt.replace("{{compiler_errors}}", "(None)")
+                prompt = prompt.replace("{{runtime_errors}}", "(None)")
+                prompt = prompt.replace("{{stderr}}", "(None - Static Analysis)")
+
         return prompt
 
     @classmethod

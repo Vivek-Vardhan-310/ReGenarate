@@ -72,7 +72,7 @@ def test_prompt_builder_token_optimization() -> None:
     review_prompt = PromptBuilder.build_review_prompt("python", "general", "code")
 
     assert len(sys_prompt) < 350
-    assert len(review_prompt) < 1000
+    assert len(review_prompt) < 3000
 
 
 def test_gzip_response_compression() -> None:

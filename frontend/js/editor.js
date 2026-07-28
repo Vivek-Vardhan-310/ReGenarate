@@ -42,6 +42,7 @@ class EditorController {
         this.importedFilename= document.getElementById("imported-filename");
         this.removeFileBtn   = document.getElementById("remove-file-btn");
         this.editorContainer = document.getElementById("monaco-editor-container");
+        this.runCodeBtn      = document.getElementById("run-code-btn");
         this.importedFile    = null;
         this._debounceTimeout= null;
     }
@@ -154,6 +155,10 @@ class EditorController {
             this.reloadFileBtn.addEventListener("click", () => this.reloadLastFile());
         }
 
+        if (this.runCodeBtn) {
+            this.runCodeBtn.addEventListener("click", () => this.handleRunCode());
+        }
+
         if (this.languageSelect) {
             this.languageSelect.addEventListener("change", () => {
                 const selectedLang = this.languageSelect.value;
@@ -168,6 +173,96 @@ class EditorController {
                     window.appState.editor.language = selectedLang;
                 }
             });
+        }
+    }
+
+    async handleRunCode() {
+        const inputData = this.getEditorData();
+        if (!inputData.code || !inputData.code.trim()) {
+            if (window.notifications) {
+                window.notifications.warning("Please enter some source code before running.");
+            }
+            return;
+        }
+
+        const runBtn = this.runCodeBtn || document.getElementById("run-code-btn");
+        const origContent = runBtn ? runBtn.innerHTML : "";
+        if (runBtn) {
+            runBtn.disabled = true;
+            runBtn.innerHTML = `<span>⏳ Running...</span>`;
+        }
+
+        try {
+            if (window.notifications) {
+                window.notifications.info("Executing code via JDoodle...");
+            }
+
+            const response = await window.apiClient.submitRunCode({
+                language: inputData.language,
+                code: inputData.code,
+                stdin: "",
+            });
+
+            if (response.success && response.data) {
+                const res = response.data;
+                const isSuccess = Boolean(res.execution_success);
+                const statusStr = isSuccess ? "success" : "failed";
+                const exitCode = isSuccess ? 0 : 1;
+                const stdoutText = res.stdout || res.output || "";
+                const stderrText = res.compiler_errors || res.runtime_errors || "";
+                const cpuTimeSec = parseFloat(res.cpu_time || 0);
+                const durationMs = isNaN(cpuTimeSec) ? 0 : Math.round(cpuTimeSec * 1000);
+
+                const consoleCtrl = this.consoleController || window.consoleController;
+                if (consoleCtrl) {
+                    consoleCtrl.setExecutionResult({
+                        status: statusStr,
+                        exit_code: exitCode,
+                        stdout: stdoutText,
+                        stderr: stderrText,
+                        execution_time_ms: durationMs,
+                    });
+
+                    if (consoleCtrl.isCollapsed) {
+                        consoleCtrl.toggleCollapse();
+                    }
+
+                    const consoleElem = document.getElementById("console-section");
+                    if (consoleElem) {
+                        consoleElem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    }
+                }
+
+                if (window.notifications) {
+                    if (isSuccess) {
+                        window.notifications.success("Execution completed successfully!");
+                    } else {
+                        window.notifications.warning("Execution finished with errors. Check console output.");
+                    }
+                }
+            } else {
+                throw new Error(response.message || "Code execution failed.");
+            }
+        } catch (error) {
+            console.error("[Run Code Error]", error);
+            const consoleCtrl = this.consoleController || window.consoleController;
+            if (consoleCtrl) {
+                consoleCtrl.setExecutionResult({
+                    status: "failed",
+                    exit_code: 1,
+                    stdout: "",
+                    stderr: error.message || "Failed to execute code.",
+                    execution_time_ms: 0,
+                });
+            }
+            if (window.notifications) {
+                window.notifications.error(error.message || "Code execution failed.");
+            }
+        } finally {
+            if (runBtn) {
+                runBtn.disabled = false;
+                runBtn.innerHTML = origContent;
+            }
         }
     }
 
