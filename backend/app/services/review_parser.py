@@ -137,14 +137,14 @@ class ReviewParser:
 
         Handles:
           - ```json ... ``` (most common LLM wrapping)
-          - ``` ... ```     (generic fence)
+          - ```python ... ``` or generic language fences
           - Inline text before/after the JSON object
 
         Falls back to the raw text if no fence is detected.
         """
-        # Pattern: ```json\n{...}\n```
+        # Pattern: ```<lang>?\n{...}\n```
         fence_pattern = re.compile(
-            r"```(?:json)?\s*\n?([\s\S]*?)\n?```",
+            r"```[a-zA-Z]*\s*\n?([\s\S]*?)\n?```",
             re.DOTALL,
         )
         match = fence_pattern.search(text)
@@ -164,25 +164,45 @@ class ReviewParser:
     @classmethod
     def _parse_json(cls, text: str) -> Optional[Dict[str, Any]]:
         """
-        Attempts to parse a string as JSON.
-
-        Returns None on failure (caller handles fallback).
+        Attempts to parse a string as JSON with multi-layered repair strategies.
+        Handles unescaped control characters (strict=False), trailing commas,
+        Python booleans (True/False/None), and trailing garbage.
         """
+        # Attempt 1: Standard parsing with strict=False (allows unescaped newlines/tabs in string values)
         try:
-            return json.loads(text)
+            return json.loads(text, strict=False)
+        except json.JSONDecodeError:
+            pass
+
+        # Attempt 2: Truncate trailing garbage after the last closing brace '}'
+        try:
+            idx = text.rfind("}")
+            if idx != -1:
+                return json.loads(text[: idx + 1], strict=False)
+        except json.JSONDecodeError:
+            pass
+
+        # Attempt 3: Apply JSON cleanup transformations (trailing commas, Python booleans)
+        repaired = text
+        repaired = re.sub(r",\s*([\}\]])", r"\1", repaired)
+        repaired = re.sub(r"\bTrue\b", "true", repaired)
+        repaired = re.sub(r"\bFalse\b", "false", repaired)
+        repaired = re.sub(r"\bNone\b", "null", repaired)
+
+        try:
+            return json.loads(repaired, strict=False)
+        except json.JSONDecodeError:
+            pass
+
+        # Attempt 4: Truncate after last closing brace on repaired text
+        try:
+            idx = repaired.rfind("}")
+            if idx != -1:
+                return json.loads(repaired[: idx + 1], strict=False)
         except json.JSONDecodeError as exc:
-            logger.debug(f"[ReviewParser] json.loads failed: {exc}")
+            logger.debug(f"[ReviewParser] All json parsing attempts failed: {exc}")
 
-            # Second attempt: try to find the first valid JSON object
-            # in case there is trailing garbage after the closing brace.
-            try:
-                idx = text.rfind("}")
-                if idx != -1:
-                    return json.loads(text[: idx + 1])
-            except json.JSONDecodeError:
-                pass
-
-            return None
+        return None
 
     # ── Private: Model Building ───────────────────────────────────────────────
 

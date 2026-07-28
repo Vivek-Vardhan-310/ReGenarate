@@ -77,7 +77,29 @@ class ReviewController {
 
             // 5. Render Result — dual-mode branching
             if (response.success && response.data) {
-                const data = response.data;
+                let data = response.data;
+
+                // Defensive fallback: If data.issues is undefined but data.review contains a JSON string,
+                // try parsing it as structured JSON so the structured UI is displayed.
+                if (data.issues === undefined && typeof data.review === "string") {
+                    try {
+                        let cleaned = data.review.trim();
+                        if (cleaned.startsWith("```")) {
+                            cleaned = cleaned.replace(/^```[a-zA-Z]*\s*\n?/, "").replace(/\n?```\s*$/, "");
+                        }
+                        const braceIdx = cleaned.indexOf("{");
+                        const lastBraceIdx = cleaned.lastIndexOf("}");
+                        if (braceIdx !== -1 && lastBraceIdx > braceIdx) {
+                            cleaned = cleaned.substring(braceIdx, lastBraceIdx + 1);
+                        }
+                        const parsed = JSON.parse(cleaned);
+                        if (parsed && Array.isArray(parsed.issues)) {
+                            data = parsed;
+                        }
+                    } catch (e) {
+                        // Keep legacy fallback if not JSON
+                    }
+                }
 
                 if (data.issues !== undefined) {
                     // ── STRUCTURED PATH (new IDE experience) ──────────────────
