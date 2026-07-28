@@ -137,8 +137,9 @@ const MonacoManager = (() => {
                             renderCharacters: false,
                         },
 
-                        // Scrollbar
+                        // Scrollbar & Scroll Chaining
                         scrollbar: {
+                            alwaysConsumeMouseWheel: false,
                             vertical:             "auto",
                             horizontal:           "auto",
                             verticalScrollbarSize: 8,
@@ -152,6 +153,8 @@ const MonacoManager = (() => {
 
                         ...options,
                     });
+
+                    _setupScrollChaining(container);
 
                     _ready = true;
 
@@ -301,6 +304,45 @@ const MonacoManager = (() => {
             console.warn("[MonacoManager] Targeted edits failed, falling back to full text replacement.", err);
             setValue(fallbackText);
         }
+    }
+
+    /**
+     * Sets up seamless scroll chaining between Monaco Editor and the outer window.
+     * When Monaco reaches its top or bottom limit, mouse wheel and trackpad scroll
+     * events propagate naturally to scroll the parent webpage.
+     *
+     * @param {HTMLElement} container
+     */
+    function _setupScrollChaining(container) {
+        if (!container) return;
+
+        container.addEventListener("wheel", (event) => {
+            if (!_editor) return;
+
+            const deltaY = event.deltaY;
+            if (deltaY === 0) return;
+
+            const scrollTop = _editor.getScrollTop();
+            const scrollHeight = _editor.getScrollHeight();
+            const layoutInfo = _editor.getLayoutInfo();
+            const containerHeight = layoutInfo ? layoutInfo.height : container.clientHeight;
+            const maxScrollTop = Math.max(0, scrollHeight - containerHeight);
+
+            const isScrollingUp = deltaY < 0;
+            const isScrollingDown = deltaY > 0;
+
+            const isAtTop = scrollTop <= 0;
+            const isAtBottom = scrollTop >= maxScrollTop - 1; // 1px tolerance for sub-pixel layout rounding
+
+            // If at top scrolling up, or at bottom scrolling down:
+            if ((isScrollingUp && isAtTop) || (isScrollingDown && isAtBottom)) {
+                // Scroll main webpage smoothly
+                window.scrollBy({
+                    top: deltaY,
+                    behavior: "auto",
+                });
+            }
+        }, { passive: true });
     }
 
     // ── Export ────────────────────────────────────────────────────────────────
