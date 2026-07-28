@@ -35,7 +35,7 @@ class RewriteController {
         }
 
         // 2. Set Loading State
-        window.Renderer.setLoading(true, "Generating optimized rewrite with AI...");
+        window.Renderer?.setLoading(true, "Generating optimized rewrite with AI...");
 
         try {
             // 3. API Submission
@@ -46,7 +46,7 @@ class RewriteController {
 
             // 4. Render Result
             if (response.success && response.data) {
-                window.Renderer.renderRewriteResult(response.data.rewritten_code, inputData.language);
+                window.Renderer?.renderRewriteResult(response.data.rewritten_code, inputData.language);
                 if (window.notifications) {
                     window.notifications.success("Code rewrite generated successfully!");
                 }
@@ -60,7 +60,7 @@ class RewriteController {
             }
         } finally {
             // 5. Clear Loading State
-            window.Renderer.setLoading(false);
+            window.Renderer?.setLoading(false);
         }
     }
 }

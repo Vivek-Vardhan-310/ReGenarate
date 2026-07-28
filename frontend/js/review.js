@@ -60,7 +60,7 @@ class ReviewController {
         }
 
         // 3. Set Loading State (unchanged)
-        window.Renderer.setLoading(true, "Analyzing source code with AI...");
+        window.Renderer?.setLoading(true, "Analyzing source code with AI...");
 
         try {
             // 4. API Submission (Includes optional execution data)
@@ -92,7 +92,7 @@ class ReviewController {
                     }
 
                     // Render structured review panel.
-                    window.Renderer.renderStructuredReview(data);
+                    window.Renderer?.renderStructuredReview(data);
 
                     // Enable bidirectional cursor sync.
                     if (window.Editor && window.Editor.navigation) {
@@ -109,7 +109,7 @@ class ReviewController {
 
                 } else {
                     // ── LEGACY MARKDOWN PATH (unchanged) ──────────────────────
-                    window.Renderer.renderReviewResult(data.review);
+                    window.Renderer?.renderReviewResult(data.review);
                     if (window.notifications) {
                         window.notifications.success("Code review generated successfully!");
                     }
@@ -125,7 +125,7 @@ class ReviewController {
             }
         } finally {
             // 6. Clear Loading State (unchanged)
-            window.Renderer.setLoading(false);
+            window.Renderer?.setLoading(false);
         }
     }
 }
