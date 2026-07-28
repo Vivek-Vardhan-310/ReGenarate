@@ -80,7 +80,7 @@ class ReviewController {
                 let data = response.data;
 
                 if (data.execution && window.consoleController) {
-                    window.consoleController.setExecutionResult(data.execution);
+                    window.consoleController.setExecutionResult(data.execution, inputData.code);
                 }
 
                 // Defensive fallback: If data.issues is undefined but data.review contains a JSON string,

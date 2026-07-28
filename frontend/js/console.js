@@ -33,6 +33,8 @@ class ConsoleController {
             stdout: "",
             stderr: "",
             executionTimeMs: 0,
+            sourceHash: null,
+            isStale: false,
         };
 
         this.activeTab = "stdout";
@@ -66,13 +68,26 @@ class ConsoleController {
         }
     }
 
-    setExecutionResult(result = {}) {
+    computeHash(code) {
+        if (typeof code !== "string" || !code) return "";
+        let hash = 0x811c9dc5;
+        for (let i = 0; i < code.length; i++) {
+            hash ^= code.charCodeAt(i);
+            hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+        }
+        return (hash >>> 0).toString(16);
+    }
+
+    setExecutionResult(result = {}, code = null) {
+        const sourceHash = code !== null ? this.computeHash(code) : null;
         this.executionState = {
             status: result.status || "not_executed",
             exitCode: typeof result.exit_code === "number" ? result.exit_code : (typeof result.exitCode === "number" ? result.exitCode : 0),
             stdout: result.stdout || "",
             stderr: result.stderr || "",
             executionTimeMs: result.execution_time_ms || result.executionTimeMs || 0,
+            sourceHash: sourceHash,
+            isStale: false,
         };
 
         // If stderr exists and stdout is empty, default to stderr tab
@@ -85,8 +100,17 @@ class ConsoleController {
         this.render();
     }
 
+    checkStaleness(currentCode) {
+        if (this.executionState.sourceHash !== null) {
+            const currentHash = this.computeHash(currentCode);
+            if (currentHash !== this.executionState.sourceHash) {
+                this.executionState.isStale = true;
+            }
+        }
+    }
+
     getExecutionData() {
-        if (this.executionState.status === "not_executed" && !this.executionState.stdout && !this.executionState.stderr) {
+        if (this.executionState.isStale || (this.executionState.status === "not_executed" && !this.executionState.stdout && !this.executionState.stderr)) {
             return null;
         }
 
@@ -144,6 +168,8 @@ class ConsoleController {
             stdout: "",
             stderr: "",
             executionTimeMs: 0,
+            sourceHash: null,
+            isStale: false,
         };
         this.activeTab = "stdout";
         this.render();

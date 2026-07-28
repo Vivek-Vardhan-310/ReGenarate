@@ -68,10 +68,16 @@ class EditorController {
         this.bindEvents();
         this.updateMetrics();
 
-        // Subscribe to Monaco content changes for metrics update.
+        // Subscribe to Monaco content changes for metrics update and staleness tracking.
         const editor = window.Editor.manager.getEditor();
         if (editor) {
-            editor.onDidChangeModelContent(() => this.debouncedUpdateMetrics(150));
+            editor.onDidChangeModelContent(() => {
+                this.debouncedUpdateMetrics(150);
+                const consoleCtrl = this.consoleController || window.consoleController;
+                if (consoleCtrl && window.Editor && window.Editor.manager) {
+                    consoleCtrl.checkStaleness(window.Editor.manager.getValue());
+                }
+            });
         }
     }
 
@@ -221,7 +227,7 @@ class EditorController {
                         stdout: stdoutText,
                         stderr: stderrText,
                         execution_time_ms: durationMs,
-                    });
+                    }, inputData.code);
 
                     if (consoleCtrl.isCollapsed) {
                         consoleCtrl.toggleCollapse();
@@ -253,7 +259,7 @@ class EditorController {
                     stdout: "",
                     stderr: error.message || "Failed to execute code.",
                     execution_time_ms: 0,
-                });
+                }, inputData.code);
             }
             if (window.notifications) {
                 window.notifications.error(error.message || "Code execution failed.");
