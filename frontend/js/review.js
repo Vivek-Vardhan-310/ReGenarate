@@ -82,7 +82,7 @@ class ReviewController {
                     // Apply Monaco diagnostics (markers + decorations + glyphs).
                     if (window.Editor && window.Editor.diagnostics) {
                         window.Editor.diagnostics.setDiagnostics(
-                            window.ReviewState.getIssues()
+                            window.ReviewState.getDiagnosticIssues()
                         );
                     }
 

@@ -508,6 +508,16 @@ body {
     box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.15);
 }
 
+/* Temporary highlight triggered by Severity Card click */
+.issue-card-highlight {
+    animation: issueHighlight 1s ease-out forwards;
+}
+
+@keyframes issueHighlight {
+    0% { background: rgba(14, 165, 233, 0.2); border-color: #0ea5e9; }
+    100% { background: transparent; border-color: var(--border-color); }
+}
+
 .issue-card-header {
     display: flex;
     flex-direction: column;
@@ -754,3 +764,35 @@ body {
     border-left: 2px solid transparent;
 }
 
+
+/* ==========================================
+   Location Warning Badges (LiveSync)
+   Shown on STALE / UNKNOWN_LOCATION issues.
+   ========================================== */
+
+.location-warning-badge {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #fde047;
+    background: rgba(234, 179, 8, 0.08);
+    border: 1px solid rgba(234, 179, 8, 0.25);
+    border-radius: 0.35rem;
+    padding: 0.4rem 0.55rem;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+    animation: fadeIn 0.2s ease;
+}
+
+.location-warning-badge span {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.location-warning-stale {
+    color: #fb923c;
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.25);
+}

@@ -129,10 +129,23 @@ const SeverityCards = (() => {
         container.querySelectorAll(".severity-card").forEach((card) => {
             card.addEventListener("click", () => {
                 const severity = card.dataset.severity;
-                if (window.Editor && window.Editor.navigation) {
-                    window.Editor.navigation.jumpToFirstIssueOfSeverity(severity);
-                }
                 setActive(severity);
+
+                if (!window.ReviewState) return;
+
+                const activeIssues = window.ReviewState.getActiveIssues();
+                const firstIssue = activeIssues.find(issue => issue.severity === severity);
+
+                if (firstIssue && firstIssue.uuid) {
+                    const issueCard = document.querySelector(`.issue-card[data-uuid="${firstIssue.uuid}"]`);
+                    if (issueCard) {
+                        issueCard.scrollIntoView({ behavior: "smooth", block: "center" });
+                        issueCard.classList.add("issue-card-highlight");
+                        setTimeout(() => {
+                            issueCard.classList.remove("issue-card-highlight");
+                        }, 1000);
+                    }
+                }
             });
         });
     }
@@ -168,6 +181,33 @@ const SeverityCards = (() => {
     }
 
     /**
+     * Updates just the numeric count on a single severity card without
+     * re-rendering the whole dashboard.
+     * Called by LiveSync after a Quick Fix resolves one issue.
+     *
+     * @param {string} severity - "critical" | "high" | "medium" | "low"
+     * @param {number} newCount - New total to display.
+     */
+    function updateCount(severity, newCount) {
+        console.log("[SeverityCards] updateCount()");
+        if (!_container) return;
+        const card = _container.querySelector(`[data-severity="${severity}"]`);
+        if (!card) return;
+
+        const countEl = card.querySelector(".severity-card-count");
+        if (countEl) countEl.textContent = newCount;
+
+        // Update aria-label to keep it accurate
+        const config = SEVERITY_CONFIG.find((c) => c.key === severity);
+        if (config) {
+            card.setAttribute(
+                "aria-label",
+                `Jump to first ${config.label} issue (${newCount} total)`
+            );
+        }
+    }
+
+    /**
      * Exposes the severity config for use by other modules (e.g., Findings).
      * @returns {Object[]}
      */
@@ -181,6 +221,7 @@ const SeverityCards = (() => {
         render,
         setActive,
         clearActive,
+        updateCount,
         getConfig,
     };
 

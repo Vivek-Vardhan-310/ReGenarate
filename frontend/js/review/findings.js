@@ -77,6 +77,7 @@ const Findings = (() => {
 
         // Store fixType in a data attribute for the future Apply Fix handler.
         const fixTypeAttr = issue.fixType ? `data-fix-type="${_esc(issue.fixType)}"` : "";
+        const uuidAttr = issue.uuid ? `data-uuid="${_esc(issue.uuid)}"` : "";
 
         return `
             <div class="issue-fix-section" id="${fixId}" ${fixTypeAttr} hidden>
@@ -85,6 +86,7 @@ const Findings = (() => {
                     <button type="button"
                         class="btn-explain"
                         data-issue-id="${issue.id}"
+                        ${uuidAttr}
                         title="Explain this fix"
                     >
                         💬 Explain
@@ -92,6 +94,7 @@ const Findings = (() => {
                     <button type="button"
                         class="btn-quick-fix"
                         data-issue-id="${issue.id}"
+                        ${uuidAttr}
                         title="Generate and preview Quick Fix"
                     >
                         ⚡ Quick Fix
@@ -110,11 +113,13 @@ const Findings = (() => {
     function _buildIssueCard(issue) {
         const style    = SEVERITY_STYLE[issue.severity] || SEVERITY_STYLE.low;
         const fixBtnId = `show-fix-${issue.id}`;
+        const uuidAttr = issue.uuid ? `data-uuid="${_esc(issue.uuid)}"` : "";
 
         return `
             <div
                 class="issue-card"
                 data-issue-id="${issue.id}"
+                ${uuidAttr}
                 role="button"
                 tabindex="0"
                 aria-label="${_esc(style.label)} issue: ${_esc(issue.title)} at line ${issue.line || '?'}"
@@ -198,10 +203,10 @@ const Findings = (() => {
 
         // Issue card click/enter → jump to issue
         _container.querySelectorAll(".issue-card").forEach((card) => {
-            const id = parseInt(card.dataset.issueId, 10);
+            const uuid = card.dataset.uuid;
 
             const handleActivate = () => {
-                const issue = window.ReviewState ? window.ReviewState.getIssueById(id) : null;
+                const issue = window.ReviewState ? window.ReviewState.getIssueByUuid(uuid) : null;
                 if (issue && window.Editor && window.Editor.navigation) {
                     window.Editor.navigation.jumpToIssue(issue);
                 }
@@ -249,9 +254,9 @@ const Findings = (() => {
         _container.querySelectorAll(".btn-explain").forEach((btn) => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                const id = parseInt(btn.dataset.issueId, 10);
+                const uuid = btn.dataset.uuid;
                 if (window.ReviewActions && window.ReviewActions.explain) {
-                    window.ReviewActions.explain(id);
+                    window.ReviewActions.explain(uuid);
                 }
             });
         });
@@ -259,9 +264,9 @@ const Findings = (() => {
         _container.querySelectorAll(".btn-quick-fix").forEach((btn) => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                const id = parseInt(btn.dataset.issueId, 10);
+                const uuid = btn.dataset.uuid;
                 if (window.ReviewActions && window.ReviewActions.quickFix) {
-                    window.ReviewActions.quickFix(id);
+                    window.ReviewActions.quickFix(uuid);
                 }
             });
         });
@@ -316,25 +321,18 @@ const Findings = (() => {
     }
 
     /**
-     * Highlights the issue card with the given id.
-     * Removes highlight from all other cards.
-     * Scrolls the highlighted card into view in the review panel.
-     *
-     * Called by NavigationManager when the cursor moves to an issue line,
-     * and by issue card click handlers.
-     *
-     * @param {number} id - Issue id.
+     * Highlights a specific issue card.
+     * @param {string} uuid - Issue uuid.
      */
-    function setActiveIssue(id) {
+    function setActiveIssue(uuid) {
         if (!_container) return;
 
         // Avoid unnecessary DOM operations if already active.
-        if (_activeId === id) return;
-        _activeId = id;
+        if (_activeId === uuid) return;
+        _activeId = uuid;
 
         _container.querySelectorAll(".issue-card").forEach((card) => {
-            const cardId = parseInt(card.dataset.issueId, 10);
-            if (cardId === id) {
+            if (card.dataset.uuid === uuid) {
                 card.classList.add("issue-card-active");
                 // Scroll the card into the review panel's visible area.
                 card.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -344,7 +342,7 @@ const Findings = (() => {
         });
 
         // Also update severity card active state via the issue's severity.
-        const issue = window.ReviewState ? window.ReviewState.getIssueById(id) : null;
+        const issue = window.ReviewState ? window.ReviewState.getIssueByUuid(uuid) : null;
         if (issue && window.SeverityCards) {
             window.SeverityCards.setActive(issue.severity);
         }
@@ -361,12 +359,95 @@ const Findings = (() => {
         });
     }
 
+    // ── Surgical DOM Mutations ────────────────────────────────────────────────
+
+    /**
+     * Removes a single issue card by UUID.
+     * If the severity group becomes empty after removal, removes the group too.
+     * Called by LiveSync after an issue is marked FIXED.
+     *
+     * @param {string} uuid - Issue UUID.
+     */
+    function removeCard(uuid) {
+        console.log("[Findings] removeCard()");
+        if (!_container || !uuid) return;
+
+        const card = _container.querySelector(`[data-uuid="${uuid}"]`);
+        if (!card) return;
+
+        const group = card.closest(".findings-group");
+        card.remove();
+
+        if (group) {
+            const remaining = group.querySelectorAll(".issue-card");
+            if (remaining.length === 0) {
+                group.remove();
+            } else {
+                // Update the group count badge
+                const countEl = group.querySelector(".findings-group-count");
+                if (countEl) countEl.textContent = remaining.length;
+            }
+        }
+
+        // Show empty-state message if panel is fully resolved
+        if (_container && _container.querySelectorAll(".issue-card").length === 0) {
+            _container.innerHTML = `<p class="findings-empty">All issues resolved! ✓ Run Generate Review to verify.</p>`;
+        }
+    }
+
+    /**
+     * Updates the line badge and location-confidence badge on an existing card.
+     * Called by LiveSync after issue relocation.
+     * Does NOT re-render the card — only patches the mutable parts.
+     *
+     * @param {Object} issue - Updated issue object from ReviewState.
+     */
+    function updateCard(issue) {
+        if (!_container || !issue || !issue.uuid) return;
+
+        const card = _container.querySelector(`[data-uuid="${issue.uuid}"]`);
+        if (!card) return;
+
+        // Update line badge
+        const lineBadge = card.querySelector(".issue-line-badge");
+        if (lineBadge) {
+            lineBadge.textContent = `Ln ${issue.line || "?"}`;
+            lineBadge.title = `Line ${issue.line || "?"}`;
+        }
+
+        // Update aria-label
+        const style = SEVERITY_STYLE[issue.severity] || SEVERITY_STYLE.low;
+        card.setAttribute(
+            "aria-label",
+            `${style.label} issue: ${issue.title} at line ${issue.line || "?"}`
+        );
+
+        // Remove any existing location warning badge
+        const existing = card.querySelector(".location-warning-badge");
+        if (existing) existing.remove();
+
+        // Add warning badge for uncertain locations
+        if (issue.status === "UNKNOWN_LOCATION") {
+            const badge = document.createElement("div");
+            badge.className = "location-warning-badge";
+            badge.innerHTML = "⚠ Location uncertain — <span>Generate a new Review to re-locate this issue.</span>";
+            card.appendChild(badge);
+        } else if (issue.status === "STALE") {
+            const badge = document.createElement("div");
+            badge.className = "location-warning-badge location-warning-stale";
+            badge.innerHTML = "⚠ Overlaps with edited region — <span>Generate a new Review for accurate results.</span>";
+            card.appendChild(badge);
+        }
+    }
+
     // ── Export ───────────────────────────────────────────────────────────────
 
     return {
         render,
         setActiveIssue,
         clearActive,
+        removeCard,
+        updateCard,
     };
 
 })();

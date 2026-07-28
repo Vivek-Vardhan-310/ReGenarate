@@ -40,37 +40,56 @@ class QuickFixParser:
         Returns:
             QuickFixData: A fully validated response payload.
         """
+        # ── Stage 1: Strip Markdown Fences ───────────────────────────────────
+        cleaned_response = raw_response.strip()
+        if cleaned_response.startswith("```"):
+            fence_lines = cleaned_response.splitlines()
+            if len(fence_lines) >= 2:
+                if fence_lines[0].startswith("```"):
+                    fence_lines = fence_lines[1:]
+                if fence_lines[-1].strip() == "```":
+                    fence_lines = fence_lines[:-1]
+            cleaned_response = "\n".join(fence_lines).strip()
+
+        # ── Stage 2: Strict JSON parse (preferred) ────────────────────────────
+        parsed_data = None
         try:
-            # 1. Strip Markdown Fences (if LLM ignores system prompt)
-            cleaned_response = raw_response.strip()
-            if cleaned_response.startswith("```"):
-                lines = cleaned_response.splitlines()
-                if len(lines) >= 2:
-                    if lines[0].startswith("```"):
-                        lines = lines[1:]
-                    if lines[-1].strip() == "```":
-                        lines = lines[:-1]
-                cleaned_response = "\n".join(lines).strip()
-                
-            # 2. Parse JSON
             parsed_data = json.loads(cleaned_response)
-            
-            # 3. Inject missing metadata if necessary
+            logger.debug("Quick Fix response parsed with strict JSON.")
+        except json.JSONDecodeError as strict_err:
+            # ── Stage 3: Non-strict fallback (handles literal \\n in strings) ──
+            # LLMs sometimes emit unescaped control characters inside JSON strings.
+            # strict=False permits these while still requiring valid JSON structure.
+            logger.warning(
+                f"Strict JSON parse failed ({strict_err}). "
+                "Retrying with strict=False."
+            )
+            try:
+                parsed_data = json.loads(cleaned_response, strict=False)
+                logger.info("Quick Fix response recovered with strict=False parse.")
+            except (json.JSONDecodeError, ValueError, TypeError) as lenient_err:
+                logger.error(
+                    f"Both strict and lenient JSON parses failed: {lenient_err}"
+                )
+                print("\n" + "=" * 80)
+                print("RAW QUICK FIX RESPONSE (PARSE FAILED)")
+                print("=" * 80)
+                print(raw_response)
+                print("=" * 80 + "\n")
+                return cls._build_fallback(original_code, issue, str(lenient_err), model_name)
+
+        # ── Stage 4: Inject missing metadata ─────────────────────────────────
+        try:
             if "issueId" not in parsed_data:
                 parsed_data["issueId"] = issue.id
             if "model" not in parsed_data and model_name:
                 parsed_data["model"] = model_name
-                
-            # 4. Validate against Pydantic schema
+
+            # ── Stage 5: Validate against Pydantic schema ─────────────────────
             return QuickFixData(**parsed_data)
-            
-        except (json.JSONDecodeError, ValueError, TypeError) as e:
-            logger.error(f"Failed to parse Quick Fix JSON response: {e}")
-            print("\n" + "=" * 80)
-            print("RAW QUICK FIX RESPONSE")
-            print("=" * 80)
-            print(raw_response)
-            print("=" * 80 + "\n")
+
+        except (ValueError, TypeError, KeyError) as e:
+            logger.error(f"Pydantic validation failed for Quick Fix response: {e}")
             return cls._build_fallback(original_code, issue, str(e), model_name)
 
     @classmethod
