@@ -26,6 +26,45 @@ from app.utils.validators import (
 )
 
 
+class ExecutionData(BaseModel):
+    """
+    Optional runtime execution output model per Phase 11 & Phase 12 (docs/07-API.md, Section 13).
+
+    Attributes:
+        status: Execution status ('success', 'failed', 'not_executed').
+        exit_code: Exit code returned by runtime (0 = success).
+        stdout: Standard output text produced during program execution.
+        stderr: Standard error / traceback text produced during program execution.
+        execution_time_ms: Duration of program execution in milliseconds.
+    """
+
+    status: Optional[str] = Field(
+        default="not_executed",
+        description="Execution status ('success', 'failed', 'not_executed').",
+        examples=["success", "failed", "not_executed"],
+    )
+    exit_code: Optional[int] = Field(
+        default=0,
+        description="Exit status integer returned by execution environment.",
+        examples=[0, 1, 137],
+    )
+    stdout: Optional[str] = Field(
+        default="",
+        description="Standard output produced during execution.",
+        examples=["Factorial of 5 = 120\n"],
+    )
+    stderr: Optional[str] = Field(
+        default="",
+        description="Standard error or stack trace produced during execution.",
+        examples=["ZeroDivisionError: division by zero"],
+    )
+    execution_time_ms: Optional[int] = Field(
+        default=0,
+        description="Execution time in milliseconds.",
+        examples=[42],
+    )
+
+
 class ReviewRequest(BaseModel):
     """
     Request model for POST /api/v1/review.
@@ -34,6 +73,7 @@ class ReviewRequest(BaseModel):
         language: Programming language of the source code.
         review_focus: Focus area for the review analysis.
         code: Source code string to be analyzed.
+        execution: Optional runtime execution data payload.
     """
 
     language: str = Field(
@@ -50,6 +90,10 @@ class ReviewRequest(BaseModel):
         ...,
         description="Source code string to analyze.",
         examples=["def add(a, b):\n    return a + b"],
+    )
+    execution: Optional[ExecutionData] = Field(
+        default=None,
+        description="Optional runtime execution data object (Phase 11 & Phase 12).",
     )
 
     @field_validator("language")

@@ -43,6 +43,12 @@ class Renderer {
 
         if (typeof window.marked !== "undefined" && window.marked.parse) {
             htmlContent = window.marked.parse(markdownText);
+            // Enhance headers with icons and alert styling for Phase 13 debugging
+            htmlContent = htmlContent
+                .replace(/<h1>Detected Runtime Issues<\/h1>/gi, '<h1 class="text-rose-400 font-bold border-l-4 border-rose-500 pl-3 py-1 bg-rose-500/10 rounded-r-md">🚨 Detected Runtime Issues</h1>')
+                .replace(/<h1>Probable Cause<\/h1>/gi, '<h1 class="text-amber-400 font-bold border-l-4 border-amber-500 pl-3 py-1 bg-amber-500/10 rounded-r-md">🔍 Probable Cause</h1>')
+                .replace(/<h1>Suggested Fix<\/h1>/gi, '<h1 class="text-emerald-400 font-bold border-l-4 border-emerald-500 pl-3 py-1 bg-emerald-500/10 rounded-r-md">💡 Suggested Fix</h1>')
+                .replace(/<h1>Improved Code<\/h1>/gi, '<h1 class="text-primary-300 font-bold border-l-4 border-primary-500 pl-3 py-1 bg-primary-500/10 rounded-r-md">✨ Improved Code</h1>');
         } else {
             const div = document.createElement("div");
             div.textContent = markdownText;
@@ -53,7 +59,26 @@ class Renderer {
     }
 
     /**
-     * LEGACY PATH — UNCHANGED.
+     * Downloads text content as a file.
+     * @param {string} filename
+     * @param {string} content
+     * @param {string} mimeType
+     */
+    static downloadFile(filename, content, mimeType = "text/plain") {
+        if (!content) return;
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * LEGACY PATH.
      * Updates the Review Panel with a markdown review string.
      * Called when backend returns { review: "markdown string" } format.
      *
@@ -61,8 +86,9 @@ class Renderer {
      */
     static renderReviewResult(reviewMarkdown) {
         const reviewContainer = document.getElementById("review-content");
-        const reviewSection   = document.getElementById("review-section");
-        const copyReviewBtn   = document.getElementById("copy-review-btn");
+        const reviewSection = document.getElementById("review-section");
+        const copyReviewBtn = document.getElementById("copy-review-btn");
+        const downloadReviewBtn = document.getElementById("download-review-btn");
 
         if (reviewContainer) {
             reviewContainer.innerHTML = `
@@ -82,6 +108,15 @@ class Renderer {
             copyReviewBtn.onclick = () => {
                 if (window.ClipboardManager) {
                     window.ClipboardManager.copy(reviewMarkdown, "Code Review");
+                }
+            };
+        }
+
+        if (downloadReviewBtn) {
+            downloadReviewBtn.onclick = () => {
+                Renderer.downloadFile("code_review_findings.md", reviewMarkdown, "text/markdown");
+                if (window.notifications) {
+                    window.notifications.success("Downloaded 'code_review_findings.md'");
                 }
             };
         }
@@ -198,7 +233,8 @@ class Renderer {
      */
     static renderRewriteResult(rewrittenCode, language = "code") {
         const rewriteContainer = document.getElementById("rewrite-content");
-        const rewriteSection   = document.getElementById("rewrite-section");
+        const rewriteSection = document.getElementById("rewrite-section");
+        const downloadRewriteBtn = document.getElementById("download-rewrite-btn");
 
         if (rewriteContainer) {
             const escapedDiv = document.createElement("div");
@@ -227,6 +263,24 @@ class Renderer {
                     }
                 });
             }
+        }
+
+        if (downloadRewriteBtn) {
+            const extMap = {
+                python: "py", java: "java", javascript: "js", typescript: "ts",
+                c: "c", cpp: "cpp", csharp: "cs", go: "go", rust: "rs", php: "php",
+                ruby: "rb", kotlin: "kt", swift: "swift", scala: "scala", sql: "sql",
+                html: "html", css: "css", xml: "xml", json: "json", yaml: "yaml",
+            };
+            const ext = extMap[String(language).toLowerCase()] || "txt";
+            const filename = `rewritten_code.${ext}`;
+
+            downloadRewriteBtn.onclick = () => {
+                Renderer.downloadFile(filename, rewrittenCode, "text/plain");
+                if (window.notifications) {
+                    window.notifications.success(`Downloaded '${filename}'`);
+                }
+            };
         }
 
         if (rewriteSection) {

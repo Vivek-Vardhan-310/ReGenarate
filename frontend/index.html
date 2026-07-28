@@ -158,30 +158,41 @@
                 </div>
 
                 <!-- Editor Action Helpers -->
-                <div class="flex items-center space-x-2 self-end md:self-auto">
+                <div class="flex flex-wrap items-center gap-2 self-end md:self-auto">
                     <button type="button" id="open-file-btn"
-                        class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5">
+                        class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5"
+                        aria-label="Open source code file">
                         <span>📂 Open File</span>
                     </button>
-                    <input type="file" id="file-input" class="hidden" />
+                    <input type="file" id="file-input" class="hidden" aria-hidden="true" />
+                    <button type="button" id="reload-file-btn"
+                        class="hidden px-3 py-2 bg-surface-800 hover:bg-surface-700 text-primary-300 text-xs font-medium rounded-lg border border-primary-500/30 transition-colors items-center space-x-1.5"
+                        title="Reload last imported file" aria-label="Reload last imported file">
+                        <span>🔄 Reload Last</span>
+                    </button>
                     <button type="button" id="load-sample-btn"
-                        class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5">
+                        class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5"
+                        aria-label="Load sample program code">
                         <span>💡 Load Sample</span>
                     </button>
                     <button type="button" id="clear-editor-btn"
-                        class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5">
+                        class="px-3 py-2 bg-surface-800 hover:bg-surface-700 text-surface-200 text-xs font-medium rounded-lg border border-surface-700 transition-colors flex items-center space-x-1.5"
+                        aria-label="Clear code editor">
                         <span>🗑️ Clear</span>
                     </button>
                 </div>
             </div>
 
-            <!-- =============================================
-                 Monaco Editor Container
-                 Replaces <textarea id="code-input">.
-                 All JS references use window.Editor.manager.
-                 ============================================= -->
-            <div class="relative mb-4">
+            <!-- Monaco Editor Container (with Drag & Drop Dropzone) -->
+            <div id="editor-dropzone" class="relative mb-4 group transition-all duration-200">
                 <label class="sr-only" for="monaco-editor-container">Source Code Editor</label>
+
+                <!-- Drag and Drop Active Overlay -->
+                <div id="drop-overlay" class="hidden absolute inset-0 bg-primary-500/20 backdrop-blur-sm border-2 border-dashed border-primary-400 rounded-xl flex-col items-center justify-center pointer-events-none z-20">
+                    <span class="text-3xl mb-2">📥</span>
+                    <p class="text-sm font-semibold text-white">Drop file to import into editor</p>
+                    <p class="text-xs text-primary-200">Automatic language detection will be applied</p>
+                </div>
 
                 <!-- Monaco mounts here -->
                 <div id="monaco-editor-container" role="textbox" aria-label="Source code editor" aria-multiline="true"></div>
@@ -194,7 +205,7 @@
                         <div id="imported-file-badge" class="hidden items-center space-x-1.5 bg-primary-500/10 text-primary-300 border border-primary-500/20 px-2.5 py-0.5 rounded-md font-mono text-xs">
                             <span>📄</span>
                             <span id="imported-filename"></span>
-                            <button type="button" id="remove-file-btn" class="text-surface-400 hover:text-white font-bold ml-1" title="Remove imported file">&times;</button>
+                            <button type="button" id="remove-file-btn" class="text-surface-400 hover:text-white font-bold ml-1" title="Remove imported file" aria-label="Remove imported file">&times;</button>
                         </div>
                     </div>
                     <span id="char-count">0 chars</span>
@@ -204,13 +215,73 @@
             <!-- Primary Action Buttons (unchanged) -->
             <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
                 <button type="button" id="review-btn"
-                    class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-primary-500/20 active:scale-95 transition-all flex items-center justify-center space-x-2">
+                    class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-primary-500/20 active:scale-95 transition-all flex items-center justify-center space-x-2"
+                    aria-label="Generate AI Code Review">
                     <span>📋 Generate Code Review</span>
                 </button>
                 <button type="button" id="rewrite-btn"
-                    class="w-full sm:w-auto px-6 py-3 bg-surface-800 hover:bg-surface-700 text-white font-semibold text-sm rounded-xl border border-surface-700 shadow-md active:scale-95 transition-all flex items-center justify-center space-x-2">
+                    class="w-full sm:w-auto px-6 py-3 bg-surface-800 hover:bg-surface-700 text-white font-semibold text-sm rounded-xl border border-surface-700 shadow-md active:scale-95 transition-all flex items-center justify-center space-x-2"
+                    aria-label="Generate AI Code Rewrite">
                     <span>✨ Generate Rewrite</span>
                 </button>
+            </div>
+        </section>
+
+        <!-- Integrated Execution Console Section (Phase 11) -->
+        <section id="console-section" class="bg-surface-900 rounded-2xl border border-surface-800 p-6 shadow-2xl space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-xl">💻</span>
+                    <h3 class="text-lg font-bold text-white">Execution Console</h3>
+                    <span id="console-status-pill" class="text-xs bg-surface-800 text-surface-200 px-2.5 py-0.5 rounded-full border border-surface-700 font-mono">
+                        Not Executed
+                    </span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button type="button" id="copy-console-btn"
+                        class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-xs text-white rounded-lg border border-surface-700 flex items-center space-x-1 transition-colors">
+                        <span>📋 Copy Output</span>
+                    </button>
+                    <button type="button" id="clear-console-btn"
+                        class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-xs text-white rounded-lg border border-surface-700 flex items-center space-x-1 transition-colors">
+                        <span>🗑️ Clear Console</span>
+                    </button>
+                    <button type="button" id="toggle-console-btn"
+                        class="px-2.5 py-1.5 bg-surface-800 hover:bg-surface-700 text-xs text-surface-200 rounded-lg border border-surface-700 transition-colors" title="Toggle Console View">
+                        <span id="toggle-console-icon">▼</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Console Body -->
+            <div id="console-body" class="space-y-3">
+                <!-- Meta stats bar (exit code & execution duration) -->
+                <div class="flex items-center justify-between text-xs text-surface-200 font-mono px-1">
+                    <div class="flex items-center space-x-3">
+                        <span id="console-exit-code">Exit Code: 0</span>
+                        <span id="console-duration">Duration: 0ms</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button type="button" id="tab-stdout-btn" class="px-2.5 py-1 rounded text-xs font-semibold bg-primary-500/20 text-primary-300 border border-primary-500/30">stdout</button>
+                        <button type="button" id="tab-stderr-btn" class="px-2.5 py-1 rounded text-xs font-semibold text-surface-400 hover:text-white">stderr</button>
+                    </div>
+                </div>
+
+                <!-- Stdout Container -->
+                <div id="stdout-container" class="relative">
+                    <textarea id="console-stdout" rows="4" readonly
+                        placeholder="Standard Output (stdout) will appear here after execution..."
+                        class="w-full bg-surface-950 text-emerald-400 font-mono text-xs p-4 rounded-xl border border-surface-800 focus:outline-none transition-colors resize-y leading-relaxed"
+                        spellcheck="false"></textarea>
+                </div>
+
+                <!-- Stderr Container (Hidden by tab unless active) -->
+                <div id="stderr-container" class="hidden relative">
+                    <textarea id="console-stderr" rows="4" readonly
+                        placeholder="Standard Error (stderr) and runtime stack traces will appear here..."
+                        class="w-full bg-surface-950 text-rose-400 font-mono text-xs p-4 rounded-xl border border-rose-900/40 focus:outline-none transition-colors resize-y leading-relaxed"
+                        spellcheck="false"></textarea>
+                </div>
             </div>
         </section>
 
@@ -246,6 +317,8 @@
                 </button>
             </div>
         </section>
+            </div>
+        </section>
 
         <!-- Review Results Section (Hidden until result) -->
         <section id="review-section" class="hidden bg-surface-900 rounded-2xl border border-surface-800 p-6 shadow-2xl space-y-4">
@@ -254,10 +327,16 @@
                     <span class="text-xl">📋</span>
                     <h3 class="text-lg font-bold text-white">AI Code Review Findings</h3>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <button type="button" id="copy-review-btn"
-                        class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-xs text-white rounded-lg border border-surface-700 flex items-center space-x-1 transition-colors">
+                        class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-xs text-white rounded-lg border border-surface-700 flex items-center space-x-1 transition-colors"
+                        aria-label="Copy code review findings to clipboard">
                         <span>📋 Copy Review</span>
+                    </button>
+                    <button type="button" id="download-review-btn"
+                        class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-xs text-white rounded-lg border border-surface-700 flex items-center space-x-1 transition-colors"
+                        aria-label="Download code review findings markdown file">
+                        <span>📥 Download (.md)</span>
                     </button>
                     <span class="text-xs bg-primary-500/10 text-primary-400 px-3 py-1 rounded-full border border-primary-500/20">
                         Markdown Format
@@ -276,9 +355,16 @@
                     <span class="text-xl">✨</span>
                     <h3 class="text-lg font-bold text-white">AI Rewritten Code</h3>
                 </div>
-                <span class="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
-                    Production Ready
-                </span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" id="download-rewrite-btn"
+                        class="px-3 py-1.5 bg-surface-800 hover:bg-surface-700 text-xs text-white rounded-lg border border-surface-700 flex items-center space-x-1 transition-colors"
+                        aria-label="Download rewritten source code file">
+                        <span>📥 Download Code</span>
+                    </button>
+                    <span class="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20">
+                        Production Ready
+                    </span>
+                </div>
             </div>
             <div id="rewrite-content" class="bg-surface-950 rounded-xl overflow-hidden border border-surface-800">
                 <!-- Renderer.renderRewriteResult() populates this -->
@@ -368,7 +454,8 @@
     <script src="js/clipboard.js"></script>
 
     <!-- Renderer (depends on SeverityCards + Findings) -->
-    <script src="js/renderer.js"></script>
+    <script src="js/samplePrograms.js"></script>
+    <script src="js/console.js"></script>
 
     <!-- EditorController adapter (depends on window.Editor.manager) -->
     <script src="js/editor.js"></script>

@@ -62,6 +62,7 @@ class ReviewService:
             "language": request.language,
             "focus": request.review_focus,
             "code": request.code,
+            "execution": request.execution.model_dump() if request.execution else None,
         }
         cache_key = review_cache.generate_key("review_structured", cache_payload)
         cached_result = review_cache.get(cache_key)
@@ -74,16 +75,18 @@ class ReviewService:
                 message="Review served from cache.",
             )
 
+        exec_status = request.execution.status if request.execution else "not_executed"
         logger.info(
             f"Processing review request | Language: {request.language} | "
-            f"Focus: {request.review_focus} | Code length: {len(request.code)} chars"
+            f"Focus: {request.review_focus} | Execution: {exec_status} | "
+            f"Code length: {len(request.code)} chars"
         )
         logger.debug(f"Code snippet: {truncate_string(request.code, 60)}")
 
         # 2. Check configuration mode
         if not self.groq_client.is_configured():
             logger.warning("GROQ_API_KEY is missing. Returning mock structured review for demonstration.")
-            mock_payload = self._build_mock_payload(request.language, request.review_focus)
+            mock_payload = self._build_mock_payload(request.language, request.review_focus, request.execution)
             review_cache.set(cache_key, mock_payload)
             return SuccessResponse(
                 success=True,
@@ -97,6 +100,7 @@ class ReviewService:
             language=request.language,
             review_focus=request.review_focus,
             code=request.code,
+            execution=request.execution,
         )
 
         # 4. Call AI Provider
@@ -120,7 +124,7 @@ class ReviewService:
     # ── Private: Mock Response ────────────────────────────────────────────────
 
     @staticmethod
-    def _build_mock_payload(language: str, review_focus: str) -> Dict[str, Any]:
+    def _build_mock_payload(language: str, review_focus: str, execution: Optional[Any] = None) -> Dict[str, Any]:
         """
         Returns a demonstration-mode structured review payload.
 

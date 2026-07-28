@@ -24,127 +24,9 @@
 
 "use strict";
 
-const SAMPLE_CODE = {
-    python: `import sqlite3
-
-def get_user(username, password):
-    # WARNING: Vulnerable to SQL Injection
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    query = "SELECT * FROM users WHERE username='" + username + "' AND password='" + password + "'"
-    cursor.execute(query)
-    return cursor.fetchone()
-
-def process_data(items):
-    total = 0
-    for item in items:
-        if item['price'] > 0:
-            total += item['price'] * 1.18
-    return round(total, 2)
-
-# Example usage
-user = get_user("admin", "password123")
-print("User:", user)`,
-
-    javascript: `const express = require('express');
-const app = express();
-
-// WARNING: No input validation
-app.get('/user', (req, res) => {
-    const userId = req.query.id;
-    const query = \`SELECT * FROM users WHERE id = \${userId}\`;
-
-    db.query(query, (err, results) => {
-        res.json(results);
-    });
-});
-
-function processOrders(orders) {
-    let result = [];
-    for (let i = 0; i < orders.length; i++) {
-        if (orders[i].status === 'pending') {
-            result.push({ id: orders[i].id, total: orders[i].amount * 1.1 });
-        }
-    }
-    return result;
-}`,
-
-    java: `public class CustomerService {
-    private Connection conn;
-
-    // WARNING: Hardcoded credentials
-    private static final String DB_PASS = "admin123";
-
-    public String getCustomer(String customerId) {
-        String query = "SELECT * FROM customers WHERE id = " + customerId;
-        try {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-            return rs.getString("name");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public double calculateDiscount(double price, int customerYears) {
-        if (customerYears > 5) {
-            return price * 0.85;
-        } else if (customerYears > 2) {
-            return price * 0.92;
-        }
-        return price;
-    }
-}`,
-
-    typescript: `interface User {
-    id: number;
-    username: string;
-    password: string;  // WARNING: Storing plain text password
-}
-
-class AuthService {
-    private users: User[] = [];
-
-    login(username: string, password: string): User | null {
-        // WARNING: Linear scan — use a Map for O(1) lookup
-        return this.users.find(u =>
-            u.username === username && u.password === password
-        ) || null;
-    }
-
-    addUser(user: User): void {
-        this.users.push(user);  // No duplicate check
-    }
-}`,
-
-    go: `package main
-
-import (
-    "database/sql"
-    "fmt"
-    "net/http"
-)
-
-// WARNING: SQL Injection vulnerability
-func getUser(db *sql.DB, username string) {
-    query := fmt.Sprintf("SELECT * FROM users WHERE name='%s'", username)
-    rows, err := db.Query(query)
-    if err != nil {
-        panic(err)  // WARNING: panic in production code
-    }
-    defer rows.Close()
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-    name := r.URL.Query().Get("name")
-    getUser(nil, name)
-    fmt.Fprintf(w, "Hello, %s!", name)  // WARNING: XSS vulnerability
-}`,
-};
-
 class EditorController {
-    constructor() {
+    constructor(consoleController = null) {
+        this.consoleController = consoleController;
         this.languageSelect  = document.getElementById("language-select");
         this.focusSelect     = document.getElementById("focus-select");
         this.charCounter     = document.getElementById("char-count");
@@ -152,7 +34,10 @@ class EditorController {
         this.sampleBtn       = document.getElementById("load-sample-btn");
         this.clearBtn        = document.getElementById("clear-editor-btn");
         this.openFileBtn     = document.getElementById("open-file-btn");
+        this.reloadFileBtn   = document.getElementById("reload-file-btn");
         this.fileInput       = document.getElementById("file-input");
+        this.dropZone        = document.getElementById("editor-dropzone");
+        this.dropOverlay     = document.getElementById("drop-overlay");
         this.importedBadge   = document.getElementById("imported-file-badge");
         this.importedFilename= document.getElementById("imported-filename");
         this.removeFileBtn   = document.getElementById("remove-file-btn");
@@ -164,6 +49,8 @@ class EditorController {
     init() {
         this.populateDropdowns();
         this.setupFileInput();
+        this.setupDragAndDrop();
+        this.updateReloadButtonVisibility();
 
         // Monaco may already be ready, or may still be loading.
         if (window.Editor && window.Editor.manager && window.Editor.manager.isReady()) {
@@ -185,6 +72,7 @@ class EditorController {
         if (editor) {
             editor.onDidChangeModelContent(() => this.debouncedUpdateMetrics(150));
         }
+    }
     }
 
     populateDropdowns() {
@@ -263,6 +151,10 @@ class EditorController {
             this.clearBtn.addEventListener("click", () => this.clearEditor());
         }
 
+        if (this.reloadFileBtn) {
+            this.reloadFileBtn.addEventListener("click", () => this.reloadLastFile());
+        }
+
         if (this.languageSelect) {
             this.languageSelect.addEventListener("change", () => {
                 const selectedLang = this.languageSelect.value;
@@ -277,6 +169,107 @@ class EditorController {
                     window.appState.editor.language = selectedLang;
                 }
             });
+        }
+    }
+
+    setupDragAndDrop() {
+        if (!this.dropZone) return;
+
+        const showOverlay = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.dropOverlay) {
+                this.dropOverlay.classList.remove("hidden");
+                this.dropOverlay.classList.add("flex");
+            }
+        };
+
+        const hideOverlay = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (this.dropOverlay) {
+                this.dropOverlay.classList.add("hidden");
+                this.dropOverlay.classList.remove("flex");
+            }
+        };
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+            this.dropZone.addEventListener(eventName, showOverlay, false);
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+            this.dropZone.addEventListener(eventName, hideOverlay, false);
+        });
+
+        this.dropZone.addEventListener("drop", (e) => {
+            const dt = e.dataTransfer;
+            const files = dt ? dt.files : null;
+            if (files && files.length > 0) {
+                this.handleFileImport(files[0]);
+            }
+        });
+    }
+
+    updateReloadButtonVisibility() {
+        try {
+            const lastFileName = localStorage.getItem("regen_last_file_name");
+            if (this.reloadFileBtn) {
+                if (lastFileName) {
+                    this.reloadFileBtn.classList.remove("hidden");
+                    this.reloadFileBtn.classList.add("flex");
+                    this.reloadFileBtn.title = `Reload last imported file: ${lastFileName}`;
+                } else {
+                    this.reloadFileBtn.classList.add("hidden");
+                    this.reloadFileBtn.classList.remove("flex");
+                }
+            }
+        } catch (e) {
+            console.warn("localStorage unavailable for reload button update:", e);
+        }
+    }
+
+    reloadLastFile() {
+        try {
+            const lastFileName = localStorage.getItem("regen_last_file_name");
+            const lastFileContent = localStorage.getItem("regen_last_file_content");
+            const lastFileLang = localStorage.getItem("regen_last_file_lang");
+
+            if (!lastFileName || !lastFileContent) {
+                if (window.notifications) {
+                    window.notifications.warning("No recent imported file found to reload.");
+                }
+                return;
+            }
+
+            if (this.codeInput) {
+                this.codeInput.value = lastFileContent;
+                this.updateMetrics();
+            }
+
+            if (lastFileLang && this.languageSelect) {
+                this.languageSelect.value = lastFileLang;
+                if (window.appState) {
+                    window.appState.editor.language = lastFileLang;
+                }
+            }
+
+            this.importedFile = lastFileName;
+            if (this.importedFilename) {
+                this.importedFilename.textContent = lastFileName;
+            }
+            if (this.importedBadge) {
+                this.importedBadge.classList.remove("hidden");
+                this.importedBadge.classList.add("flex");
+            }
+
+            if (window.notifications) {
+                window.notifications.success(`Reloaded last imported file: '${lastFileName}'`);
+            }
+        } catch (e) {
+            console.error("Failed to reload last file:", e);
+            if (window.notifications) {
+                window.notifications.error("Failed to reload last file.");
+            }
         }
     }
 
@@ -323,6 +316,17 @@ class EditorController {
                     this.importedBadge.classList.add("flex");
                 }
 
+                // 5. Store in localStorage for Reload Last File
+                try {
+                    localStorage.setItem("regen_last_file_name", file.name);
+                    localStorage.setItem("regen_last_file_content", content);
+                    localStorage.setItem("regen_last_file_lang", detectedLang || "");
+                    this.updateReloadButtonVisibility();
+                } catch (err) {
+                    console.warn("Unable to save recent file to localStorage:", err);
+                }
+
+                // 6. Notify user of successful import
                 if (window.notifications) {
                     const langLabel = detectedLang ? detectedLang.toUpperCase() : "File";
                     window.notifications.success(`Imported '${file.name}' (Auto-detected ${langLabel})`);
@@ -379,14 +383,39 @@ class EditorController {
 
     loadSampleCode() {
         this.removeImportedFile();
-        const currentLang = this.languageSelect ? this.languageSelect.value : "python";
-        const sample = SAMPLE_CODE[currentLang] || SAMPLE_CODE.python;
+        const currentLang = this.languageSelect ? this.languageSelect.value : "";
+        
+        if (!currentLang) {
+            if (window.notifications) {
+                window.notifications.warning("Please select a programming language first.");
+            }
+            return;
+        }
+
+        const sample = typeof window.getSampleProgram === "function"
+            ? window.getSampleProgram(currentLang)
+            : (window.samplePrograms ? window.samplePrograms[currentLang] : null);
+
+        if (!sample) {
+            if (window.notifications) {
+                window.notifications.warning("No sample program is available for this language.");
+            }
+            return;
+        }
 
         if (window.Editor && window.Editor.manager) {
             window.Editor.manager.setValue(sample);
             this.updateMetrics();
+
+            // Resolve friendly display name for notification
+            let langDisplayName = currentLang.toUpperCase();
+            if (window.SUPPORTED_LANGUAGES_LIST) {
+                const found = window.SUPPORTED_LANGUAGES_LIST.find((l) => l.id === currentLang);
+                if (found) langDisplayName = found.name;
+            }
+
             if (window.notifications) {
-                window.notifications.info(`Loaded sample ${currentLang.toUpperCase()} code.`);
+                window.notifications.info(`Loaded ${langDisplayName} sample code.`);
             }
         }
     }
@@ -418,6 +447,9 @@ class EditorController {
      * @returns {{ language: string, reviewFocus: string, code: string, importedFile: string|null }}
      */
     getEditorData() {
+        const consoleCtrl = this.consoleController || window.consoleController;
+        const executionData = consoleCtrl ? consoleCtrl.getExecutionData() : null;
+
         return {
             language:    this.languageSelect ? this.languageSelect.value : "",
             reviewFocus: this.focusSelect    ? this.focusSelect.value    : "",
@@ -425,6 +457,7 @@ class EditorController {
                 ? window.Editor.manager.getValue()
                 : "",
             importedFile: this.importedFile,
+            execution: executionData,
         };
     }
 }

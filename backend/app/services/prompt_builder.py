@@ -9,12 +9,15 @@ Per Prompt Engineering Specification (docs/08-Prompt-Engineering.md) & Phase 7 O
 - Ensures deterministic prompt construction.
 """
 
+from typing import Optional
 from app.config.settings import settings
+from app.schemas.requests import ExecutionData
 
 
 class PromptBuilder:
     """
     Constructs token-optimized system and user prompts for AI operations.
+    Supports Version 2 Runtime-Aware Reviews per docs/08-Prompt-Engineering.md.
     """
 
     # System prompt for generic operations (rewrite)
@@ -54,9 +57,20 @@ class PromptBuilder:
     )
 
     REVIEW_PROMPT_TEMPLATE = (
-        "Review the following {{language}} source code with focus on: {{review_focus}}.\n\n"
-        "Analyze for: correctness, security vulnerabilities, performance issues, "
-        "readability, maintainability, and best practices violations.\n\n"
+        "Task: Review the following {{language}} source code and execution context.\n\n"
+        "Programming Language:\n{{language}}\n\n"
+        "Execution Status:\n{{execution_status}}\n\n"
+        "Exit Code:\n{{exit_code}}\n\n"
+        "Standard Output:\n{{stdout}}\n\n"
+        "Standard Error:\n{{stderr}}\n\n"
+        "Review Focus:\n{{review_focus}}\n\n"
+        "Instructions:\n"
+        "- Use runtime execution information whenever available during code review.\n"
+        "- Runtime evidence takes precedence over static assumptions.\n"
+        "- Distinguish between compile-time errors and runtime errors.\n"
+        "- Correlate stack traces in standard error with source code locations and functions.\n"
+        "- If execution data is unavailable (e.g. status is not_executed or execution results are absent), perform normal static analysis.\n\n"
+        "Analyze for: correctness, security vulnerabilities, performance issues, readability, maintainability, and best practices violations.\n\n"
         "Respond with ONLY a valid JSON object matching this exact schema:\n"
         "{\n"
         '  "summary": "<overall assessment string>",\n'
@@ -91,6 +105,9 @@ class PromptBuilder:
         "  (will be used for backward compatibility)\n"
         "- Do NOT fabricate issues that do not exist\n"
         "- Do NOT include any text outside the JSON object\n\n"
+        "The source code below is already line-numbered.\n"
+        "Every line begins with: <line_number> | \n"
+        "Use ONLY these provided line numbers.\n"
         "Code ({{language}}):\n```{{language}}\n{{code}}\n```"
     )
 
@@ -166,12 +183,29 @@ class PromptBuilder:
         return "\n".join(numbered_lines)
 
     @classmethod
-    def build_review_prompt(cls, language: str, review_focus: str, code: str) -> str:
+    def build_review_prompt(
+        cls,
+        language: str,
+        review_focus: str,
+        code: str,
+        execution: Optional[ExecutionData] = None,
+    ) -> str:
         """Constructs token-optimized user prompt for code review."""
         numbered_code = cls.preprocess_code(code)
         prompt = cls.REVIEW_PROMPT_TEMPLATE.replace("{{language}}", language)
         prompt = prompt.replace("{{review_focus}}", review_focus)
         prompt = prompt.replace("{{code}}", numbered_code)
+
+        if execution:
+            prompt = prompt.replace("{{execution_status}}", execution.status or "not_executed")
+            prompt = prompt.replace("{{exit_code}}", str(execution.exit_code if execution.exit_code is not None else 0))
+            prompt = prompt.replace("{{stdout}}", execution.stdout if execution.stdout else "(None)")
+            prompt = prompt.replace("{{stderr}}", execution.stderr if execution.stderr else "(None)")
+        else:
+            prompt = prompt.replace("{{execution_status}}", "not_executed")
+            prompt = prompt.replace("{{exit_code}}", "0")
+            prompt = prompt.replace("{{stdout}}", "(None - Static Analysis)")
+            prompt = prompt.replace("{{stderr}}", "(None - Static Analysis)")
         return prompt
 
     @classmethod
